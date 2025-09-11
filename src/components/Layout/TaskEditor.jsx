@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, Background } from '@xyflow/react';
+import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, Background, BackgroundVariant } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 const initialNodes = [
@@ -26,13 +26,14 @@ export default function App() {
   );
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div className='w-full h-full'>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        proOptions={{ hideAttribution: true }}
         fitView
       >
         <Background
@@ -40,7 +41,7 @@ export default function App() {
           gap={20}
           size={1}
           color="#999"
-          variant="cross"
+          variant={BackgroundVariant.Dots}
         />
       </ReactFlow>
     </div>
