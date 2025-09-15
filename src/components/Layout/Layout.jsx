@@ -7,6 +7,11 @@ import { useState } from "react";
 
 const Layout = ({ children }) => {
   const [logOpen, setLogOpen] = useState(false);
+  const [addNodeFunction, setAddNodeFunction] = useState(null);
+
+  const handleAddNodeFunction = (addNodeFn) => {
+    setAddNodeFunction(() => addNodeFn);
+  };
 
   return (
     <div className="select-none flex flex-col h-screen bg-dark0">
@@ -14,10 +19,10 @@ const Layout = ({ children }) => {
       <div className="flex flex-1">
         <Sidebar logOpen={logOpen} setLogOpen={setLogOpen} />
         <div className="flex flex-col flex-1">
-          <TaskEditor />
+          <TaskEditor onAddNode={handleAddNodeFunction} />
           {logOpen && <Logger logOpen={logOpen} setLogOpen={setLogOpen} />}
         </div>
-        <Menubar />
+        <Menubar addNode={addNodeFunction} />
       </div>
     </div>
   );
