@@ -27,6 +27,10 @@
 
 **Linux:**
 - Install required system libraries:
+  - Arch: 
+  ```sh
+  sudo pacman -S webkit2gtk gtk3 base-devel openssl
+   ```
   - Debian/Ubuntu: 
   ```sh
    sudo apt update && sudo apt install -y libwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev
@@ -35,18 +39,13 @@
   ```sh
   sudo dnf install -y webkit2gtk3-devel openssl-devel gtk3-devel
    ```
-  - Arch: 
-  ```sh
-  sudo pacman -S webkit2gtk gtk3 base-devel openssl
-   ```
-
 ---
 
 ## Project Setup
 
 1. **Clone the repository**
 	```sh
-	git clone <repo-url>
+	git clone https://github.com/IstiakAR/Automation
 	cd Automation
 	```
 
@@ -75,9 +74,3 @@
 	```sh
 	npm run tauri build
 	```
-
----
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
