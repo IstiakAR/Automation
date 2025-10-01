@@ -1,5 +1,5 @@
-import Layout from "../Layout/Layout";
-import Card from "../common/Card";
+import Layout from "../components/layout/Layout";
+import Card from "../components/common/Card";
 
 const Dashboard = () => {
   return (
