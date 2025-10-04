@@ -14,11 +14,11 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="select-none flex flex-col h-screen bg-dark0">
+    <div className="select-none flex flex-col h-screen bg-dark0 overflow-hidden">
       <Topbar />
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar logOpen={logOpen} setLogOpen={setLogOpen} />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <TaskEditor onAddNode={handleAddNodeFunction} />
           {logOpen && <Logger logOpen={logOpen} setLogOpen={setLogOpen} />}
         </div>
