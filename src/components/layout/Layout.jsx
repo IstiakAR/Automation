@@ -1,6 +1,6 @@
-import Sidebar from "./Sidebar";
+import Leftbar from "./Leftbar";
 import Topbar from "./Topbar";
-import Menubar from "./Menubar";
+import Rightbar from "./Rightbar";
 import TaskEditor from "./TaskEditor";
 import Logger from "./Logger";
 import { useState } from "react";
@@ -17,12 +17,12 @@ const Layout = ({ children }) => {
     <div className="select-none flex flex-col h-screen bg-dark0 overflow-hidden">
       <Topbar />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar logOpen={logOpen} setLogOpen={setLogOpen} />
+        <Leftbar logOpen={logOpen} setLogOpen={setLogOpen} />
         <div className="flex flex-col flex-1 overflow-hidden">
           <TaskEditor onAddNode={handleAddNodeFunction} />
           {logOpen && <Logger logOpen={logOpen} setLogOpen={setLogOpen} />}
         </div>
-        <Menubar addNode={addNodeFunction} />
+        <Rightbar addNode={addNodeFunction} />
       </div>
     </div>
   );

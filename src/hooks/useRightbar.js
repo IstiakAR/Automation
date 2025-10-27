@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const useMenubar = (cards) => {
+export const useRightbar = (cards) => {
     const [isOpen, setIsOpen] = useState(false);
     const [filter, setFilter] = useState("");
     const [filteredCards, setFilteredCards] = useState(cards);
@@ -27,7 +27,7 @@ export const useMenubar = (cards) => {
         }));
     };
 
-    const toggleMenubar = () => {
+    const toggleRightbar = () => {
         setIsOpen(prev => !prev);
     };
 
@@ -38,6 +38,6 @@ export const useMenubar = (cards) => {
         collapsedSections,
         handleFilter,
         toggleSection,
-        toggleMenubar
+        toggleRightbar
     };
 };

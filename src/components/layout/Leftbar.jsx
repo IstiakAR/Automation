@@ -1,9 +1,9 @@
-import { Settings, FileText, FolderKanban, ChevronsUpDown, SidebarClose, Gauge, Plus, Check, Trash2, X } from "lucide-react";
+import { Settings, FileText, FolderKanban, ChevronsUpDown, LeftbarClose, Gauge, Plus, Check, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceCreateMenu from "../common/WorkspaceCreateMenu";
 
-const Sidebar = ({ logOpen, setLogOpen }) => {
+const Leftbar = ({ logOpen, setLogOpen }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [inlineTaskName, setInlineTaskName] = useState("");
   const {
@@ -156,7 +156,7 @@ const Sidebar = ({ logOpen, setLogOpen }) => {
           </div>
         </div>
         <div className="absolute z-50 bg-dark1 hover:bg-dark2 cursor-pointer top-0 -right-10 p-2 flex items-center justify-center text-white rounded-sm border-dark2 border-r border-b">
-        <SidebarClose
+        <LeftbarClose
           size={22}
           onClick={() => setIsOpen(false)}
         />
@@ -172,7 +172,7 @@ const Sidebar = ({ logOpen, setLogOpen }) => {
     return (
       <>
         <div className="w-[55px] flex-shrink-0 h-full bg-dark0 border-r border-dark2 flex flex-col p-4 justify-between">
-          <SidebarClose
+          <LeftbarClose
             size={20}
             className="rotate-180 hover:bg-dark2 cursor-pointer text-white"
             onClick={() => setIsOpen(true)}
@@ -202,4 +202,4 @@ const Sidebar = ({ logOpen, setLogOpen }) => {
   }
 };
 
-export default Sidebar;
+export default Leftbar;

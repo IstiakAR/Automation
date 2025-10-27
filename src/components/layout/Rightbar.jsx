@@ -1,9 +1,9 @@
-import { SidebarClose, ChevronDown, Plus } from "lucide-react";
+import { LeftbarClose, ChevronDown, Plus } from "lucide-react";
 import DraggableCard from "../common/DraggableCard";
-import { useMenubar } from "../../hooks/useMenubar";
-import { menubarCards } from "../../data/menubarCards";
+import { useRightbar } from "../../hooks/useRightbar";
+import { RightbarCards } from "../../data/rightbarCards";
 
-const Menubar = () => {
+const Rightbar = () => {
     const {
         isOpen,
         filter,
@@ -11,8 +11,8 @@ const Menubar = () => {
         collapsedSections,
         handleFilter,
         toggleSection,
-        toggleMenubar
-    } = useMenubar(menubarCards);
+        toggleRightbar
+    } = useRightbar(RightbarCards);
     
     if (isOpen) {
     return (
@@ -21,7 +21,7 @@ const Menubar = () => {
             <div className="flex flex-row items-center justify-between mb-4">
                 <input type="text" placeholder="Search..." value={filter} className="bg-dark2 text-white rounded p-2" onChange={handleFilter}/>
                 <div className="justify-end flex items-center text-white rounded">
-                    <SidebarClose size={20} className="rotate-180 hover:bg-dark2 cursor-pointer" onClick={toggleMenubar} />
+                    <LeftbarClose size={20} className="rotate-180 hover:bg-dark2 cursor-pointer" onClick={toggleRightbar} />
                 </div>
             </div>
 
@@ -56,10 +56,10 @@ const Menubar = () => {
     else {
     return(
         <div className="w-[50px] flex-shrink-0 h-full bg-dark0 border-l border-dark2 flex flex-col p-4 pt-6 overflow-hidden">
-            <SidebarClose size={20} className="hover:bg-dark2 cursor-pointer text-white" onClick={toggleMenubar} />
+            <LeftbarClose size={20} className="hover:bg-dark2 cursor-pointer text-white" onClick={toggleRightbar} />
         </div>
     )
     }
 };
 
-export default Menubar;
+export default Rightbar;
