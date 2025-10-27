@@ -8,6 +8,7 @@ import { useState } from "react";
 const Layout = ({ children }) => {
   const [logOpen, setLogOpen] = useState(false);
   const [addNodeFunction, setAddNodeFunction] = useState(null);
+  const [selectedTaskId, setSelectedTaskId] = useState(0);
 
   const handleAddNodeFunction = (addNodeFn) => {
     setAddNodeFunction(() => addNodeFn);
@@ -17,9 +18,9 @@ const Layout = ({ children }) => {
     <div className="select-none flex flex-col h-screen bg-dark0 overflow-hidden">
       <Topbar />
       <div className="flex flex-1 overflow-hidden">
-        <Leftbar logOpen={logOpen} setLogOpen={setLogOpen} />
+        <Leftbar logOpen={logOpen} setLogOpen={setLogOpen} setSelectedTaskId={setSelectedTaskId} />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <TaskEditor onAddNode={handleAddNodeFunction} />
+          <TaskEditor taskId={selectedTaskId} onAddNode={handleAddNodeFunction} />
           {logOpen && <Logger logOpen={logOpen} setLogOpen={setLogOpen} />}
         </div>
         <Rightbar addNode={addNodeFunction} />

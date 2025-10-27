@@ -1,9 +1,9 @@
-import { Settings, FileText, FolderKanban, ChevronsUpDown, LeftbarClose, Gauge, Plus, Check, Trash2, X } from "lucide-react";
+import { Settings, FileText, FolderKanban, ChevronsUpDown, SidebarClose, Gauge, Plus, Check, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceCreateMenu from "../common/WorkspaceCreateMenu";
 
-const Leftbar = ({ logOpen, setLogOpen }) => {
+const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [inlineTaskName, setInlineTaskName] = useState("");
   const {
@@ -117,6 +117,7 @@ const Leftbar = ({ logOpen, setLogOpen }) => {
               activeWorkspace.tasks.map((task) => (
                 <div key={task.id}
                   className="flex items-center justify-between gap-2 p-2 rounded text-white hover:bg-dark2 cursor-pointer group"
+                  onClick={() => setSelectedTaskId(task.id)}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <FileText size={16} />
@@ -143,20 +144,20 @@ const Leftbar = ({ logOpen, setLogOpen }) => {
 
         <div className="flex flex-col items-start">
           <div
-            className="w-full h-10 flex items-center gap-2 rounded text-white hover:bg-dark2 cursor-pointer"
+            className="p-2 w-full h-10 flex items-center gap-2 rounded text-white hover:bg-dark2 cursor-pointer"
             onClick={() => setLogOpen(!logOpen)}
           >
             <Gauge size={20} /> Monitor
           </div>
           <div
-            className="w-full h-10 flex items-center gap-2 rounded text-white hover:bg-dark2 cursor-pointer"
+            className="p-2 w-full h-10 flex items-center gap-2 rounded text-white hover:bg-dark2 cursor-pointer"
             onClick={() => setLogOpen(!logOpen)}
           >
             <Settings size={20} /> Settings
           </div>
         </div>
         <div className="absolute z-50 bg-dark1 hover:bg-dark2 cursor-pointer top-0 -right-10 p-2 flex items-center justify-center text-white rounded-sm border-dark2 border-r border-b">
-        <LeftbarClose
+        <SidebarClose
           size={22}
           onClick={() => setIsOpen(false)}
         />
@@ -172,7 +173,7 @@ const Leftbar = ({ logOpen, setLogOpen }) => {
     return (
       <>
         <div className="w-[55px] flex-shrink-0 h-full bg-dark0 border-r border-dark2 flex flex-col p-4 justify-between">
-          <LeftbarClose
+          <SidebarClose
             size={20}
             className="rotate-180 hover:bg-dark2 cursor-pointer text-white"
             onClick={() => setIsOpen(true)}

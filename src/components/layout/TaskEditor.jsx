@@ -1,95 +1,59 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ReactFlow,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
   Background,
   BackgroundVariant,
   Controls
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import * as LucideIcons from "lucide-react";
-import TaskNode from "../common/TaskNode"
-
-let id = 0;
-const getId = () => `node_${++id}`;
+import TaskNode from "../common/TaskNode";
+import { useFlow } from "../../hooks/useFlow";
+import { useDragDrop } from "../../hooks/useDragDrop";
+import { useSaveFlowData } from "../../hooks/useSaveFlowData";
 
 const nodeTypes = {
   taskNode: TaskNode,
 };
 
-export default function TaskEditor({ onAddNode }) {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
+export default function TaskEditor(props) {
+  const {
+    nodes,
+    setNodes,
+    edges,
+    setEdges,
+    reactFlowInstance,
+    setReactFlowInstance,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+  } = useFlow();
+  const { onDragOver, onDrop } = useDragDrop(reactFlowInstance, setNodes);
+  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges);
   const reactFlowWrapper = useRef(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [taskId, setTaskId] = useState(props.taskId || 0);
 
-  const onNodesChange = useCallback(
-    (changes) =>
-      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    []
-  );
-  const onEdgesChange = useCallback(
-    (changes) =>
-      setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-    []
-  );
-  const onConnect = useCallback(
-    (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-    []
-  );
-
-  const onDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-
-      const draggedData = event.dataTransfer.getData('application/reactflow');
-      
-      if (typeof draggedData === 'undefined' || !draggedData) {
-        return;
-      }
-
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      
-      let label = 'Task';
-      let iconName = 'ClipboardCheck';
-      let iconComponent = LucideIcons.ClipboardCheck;
-
-      try {
-        const parsedData = JSON.parse(draggedData);
-        console.log('Parsed drag data:', parsedData);
-        label = parsedData.name || 'Task';
-        iconName = parsedData.iconName || 'ClipboardCheck';
-        console.log('Looking for icon:', iconName, 'Available:', Object.keys(LucideIcons).includes(iconName));
-        iconComponent = LucideIcons[iconName] || LucideIcons.ClipboardCheck;
-        console.log('Using icon component:', iconComponent.name || 'ClipboardCheck');
-      } catch (e) {
-        label = draggedData || 'Task';
-        iconName = 'ClipboardCheck';
-        iconComponent = LucideIcons.ClipboardCheck;
-      }
-      
-      const newNode = {
-        id: getId(),
-        type: 'taskNode',
-        position,
-        data: { label, iconName },
+  useEffect(() => {
+    setTaskId(props.taskId || 0);
+    
+    // Load saved data when taskId changes
+    if (props.taskId && props.taskId !== 0) {
+      const loadData = async () => {
+        const savedData = await loadFlowData(props.taskId);
+        if (savedData) {
+          setNodes(savedData.nodes);
+          setEdges(savedData.edges);
+        } else {
+          setNodes([]);
+          setEdges([]);
+        }
       };
+      loadData();
+    }
+  }, [props.taskId, loadFlowData, setNodes, setEdges]);
 
-      setNodes((nds) => nds.concat(newNode));
-    },
-    [reactFlowInstance],
-  );
-
+  if(taskId === 0) {
+    return <></>;
+  }
   return (
     <div className="flex w-full h-full">
       <div className="flex-1" ref={reactFlowWrapper}>

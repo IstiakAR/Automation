@@ -2,7 +2,8 @@ const DraggableCard = (props) => {
     const onDragStart = (event) => {
         event.dataTransfer.setData('application/reactflow', JSON.stringify({
             name: props.name,
-            iconName: props.iconKey
+            iconName: props.iconKey,
+            task: props.task
         }));
         event.dataTransfer.effectAllowed = 'move';
     };

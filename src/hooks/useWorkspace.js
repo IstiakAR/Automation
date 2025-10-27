@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { nanoid } from 'nanoid'
 
 const initialWorkspaces = [
   { 
@@ -59,7 +60,7 @@ export const useWorkspace = () => {
 
   const createTaskInline = (taskName, workspaceId = activeWorkspace.id) => {
     const newTask = {
-      id: Date.now(),
+      id: nanoid(),
       name: taskName,
       createdAt: new Date().toISOString()
     };
