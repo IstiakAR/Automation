@@ -2,97 +2,92 @@ import { useEffect, useCallback } from "react";
 import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
 import { join, appConfigDir } from "@tauri-apps/api/path";
 
-const FILE_NAME = "flowData.json";
+const getWorkspaceFilePath = async (workspaceId) => {
+  const configDir = await appConfigDir();
+  return await join(configDir, `flowData-${workspaceId}.json`);
+};
 
-export function useSaveFlowData(taskId, nodes, edges) {
-  // Save nodes and edges to flowData.json file
+// delete task
+export async function deleteTaskFromStorage(taskId, workspaceId) {
+  if (taskId === 0 || !taskId || !workspaceId) return;
+  
+  try {
+    const filePath = await getWorkspaceFilePath(workspaceId);
+    
+    let taskData = {};
+    try {
+      const fileContent = await readTextFile(filePath);
+      taskData = JSON.parse(fileContent);
+    } catch {
+      return;
+    }
+
+    delete taskData[taskId];
+    await writeTextFile(filePath, JSON.stringify(taskData, null, 2));
+    console.log(`Deleted task ${taskId} from workspace ${workspaceId}`);
+  } catch (error) {
+    console.error("Error deleting task from storage:", error);
+  }
+}
+
+// save task
+export function useSaveFlowData(taskId, nodes, edges, workspaceId) {
   useEffect(() => {
-    if (taskId === 0 || !taskId) return;
+    if (taskId === 0 || !taskId || !workspaceId) return;
 
     const saveData = async () => {
       try {
-        const configDir = await appConfigDir();
-        const filePath = await join(configDir, FILE_NAME);
-        
-        let allFlowData = {};
-        
-        // Try to read existing file
+        const filePath = await getWorkspaceFilePath(workspaceId);
+        let taskData = {};
         try {
           const fileContent = await readTextFile(filePath);
-          allFlowData = JSON.parse(fileContent);
+          taskData = JSON.parse(fileContent);
         } catch {
-          // File doesn't exist yet, start with empty object
-          allFlowData = {};
+          taskData = {};
         }
         
-        allFlowData[taskId] = {
+        taskData[taskId] = {
           nodes,
           edges,
           savedAt: new Date().toISOString(),
         };
 
-        // Write to file
-        await writeTextFile(filePath, JSON.stringify(allFlowData, null, 2));
-        console.log("Flow data saved for task:", taskId);
+        await writeTextFile(filePath, JSON.stringify(taskData, null, 2));
+        console.log(`Flow data saved for task ${taskId} in workspace ${workspaceId}`);
       } catch (error) {
         console.error("Error saving flow data:", error);
       }
     };
 
     saveData();
-  }, [taskId, nodes, edges]);
+  }, [taskId, nodes, edges, workspaceId]);
 
-  // Load nodes and edges from file for a specific taskId
-  const loadFlowData = useCallback(async (id) => {
-    if (id === 0 || !id) return null;
+  // Load nodes and edges
+  const loadFlowData = useCallback(async (id, wsId) => {
+    if (id === 0 || !id || !wsId) return null;
 
     try {
-      const configDir = await appConfigDir();
-      const filePath = await join(configDir, FILE_NAME);
-      
+      const filePath = await getWorkspaceFilePath(wsId);
       const fileContent = await readTextFile(filePath);
-      const allFlowData = JSON.parse(fileContent);
-      return allFlowData[id] || null;
+      const taskData = JSON.parse(fileContent);
+      return taskData[id] || null;
     } catch (error) {
       console.error("Error loading flow data:", error);
       return null;
     }
   }, []);
 
-  // Clear data for a specific taskId
-  const clearFlowData = useCallback(async (id) => {
-    if (id === 0 || !id) return;
-
+  // Get all saved tasks for a workspace
+  const getAllSavedTasks = useCallback(async (wsId) => {
+    if (!wsId) return [];
+    
     try {
-      const configDir = await appConfigDir();
-      const filePath = await join(configDir, FILE_NAME);
-      
-      let allFlowData = {};
-      try {
-        const fileContent = await readTextFile(filePath);
-        allFlowData = JSON.parse(fileContent);
-      } catch {
-        return;
-      }
-      
-      delete allFlowData[id];
-      await writeTextFile(filePath, JSON.stringify(allFlowData, null, 2));
-    } catch (error) {
-      console.error("Error clearing flow data:", error);
-    }
-  }, []);
-
-  // Get all saved tasks
-  const getAllSavedTasks = useCallback(async () => {
-    try {
-      const configDir = await appConfigDir();
-      const filePath = await join(configDir, FILE_NAME);
-      
+      const filePath = await getWorkspaceFilePath(wsId);
       const fileContent = await readTextFile(filePath);
-      const allFlowData = JSON.parse(fileContent);
-      return Object.keys(allFlowData).map((id) => ({
+      const taskData = JSON.parse(fileContent);
+      return Object.keys(taskData).map((id) => ({
         taskId: id,
-        ...allFlowData[id],
+        ...taskData[id],
       }));
     } catch (error) {
       console.error("Error getting all saved tasks:", error);
@@ -102,7 +97,8 @@ export function useSaveFlowData(taskId, nodes, edges) {
 
   return {
     loadFlowData,
-    clearFlowData,
     getAllSavedTasks,
   };
 }
+
+export default useSaveFlowData;

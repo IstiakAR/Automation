@@ -129,6 +129,7 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteTask(task.id);
+                      setSelectedTaskId(0);
                     }}
                     title="Delete task"
                   />

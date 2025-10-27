@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { nanoid } from 'nanoid'
+import { nanoid } from 'nanoid';
+import { writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { join, appConfigDir, configDir } from "@tauri-apps/api/path";
+import { deleteTaskFromStorage } from "./useSaveFlowData";
 
 const initialWorkspaces = [
   { 
@@ -27,7 +30,7 @@ const initialWorkspaces = [
   },
 ];
 
-export const useWorkspace = () => {
+export const useWorkspace = ({ setSelectedTaskId } = {}) => {
   const [workspaces, setWorkspaces] = useState(initialWorkspaces);
   const [activeWorkspace, setActiveWorkspace] = useState(
     initialWorkspaces.find(w => w.active) || initialWorkspaces[0]
@@ -36,7 +39,7 @@ export const useWorkspace = () => {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showInlineTaskInput, setShowInlineTaskInput] = useState(false);
 
-  const handleWorkspaceSelect = (workspace) => {
+  const handleWorkspaceSelect = async (workspace) => {
     const updatedWorkspaces = workspaces.map(w => ({
       ...w,
       active: w.id === workspace.id
@@ -44,19 +47,44 @@ export const useWorkspace = () => {
     setWorkspaces(updatedWorkspaces);
     setActiveWorkspace(workspace);
     setShowWorkspaceDropdown(false);
+    
+    try {
+      const appConfig = await appConfigDir();
+      const filePath = await join(appConfig, `flowData-${workspace.id}.json`);
+      const fileExists = await exists(filePath);
+      if (!fileExists) {
+        await createWorkspaceFile(workspace.id);
+      }
+    } catch (error) {
+      console.error("Error handling workspace select:", error);
+    }
   };
 
-  const createWorkspace = (name) => {
+  const createWorkspace = async (name) => {
     const newWorkspace = {
-      id: crypto.randomUUID(),
+      id: nanoid(),
       name,
       active: false,
       tasks: []
     };
     setWorkspaces(prev => [...prev, newWorkspace]);
     setShowCreateMenu(false);
+    if (setSelectedTaskId) {
+      setSelectedTaskId(0);
+    }
+    createWorkspaceFile(newWorkspace.id);
   };
 
+  const createWorkspaceFile = async (workspaceId) => {
+    try {
+      const configDir = await appConfigDir();
+      await mkdir(configDir, { recursive: true });
+      const filePath = await join(configDir, `flowData-${workspaceId}.json`);
+      await writeTextFile(filePath, JSON.stringify({}, null, 2));
+    } catch (error) {
+      console.error("Error creating workspace file:", error);
+    }
+  }
 
   const createTaskInline = (taskName, workspaceId = activeWorkspace.id) => {
     const newTask = {
@@ -88,12 +116,12 @@ export const useWorkspace = () => {
         : workspace
     ));
 
-    // Update active workspace if task was deleted from it
     if (workspaceId === activeWorkspace.id) {
       setActiveWorkspace(prev => ({
         ...prev,
         tasks: prev.tasks.filter(task => task.id !== taskId)
       }));
+      deleteTaskFromStorage(taskId, workspaceId);
     }
   };
 
@@ -103,12 +131,11 @@ export const useWorkspace = () => {
   };
 
   const deleteWorkspace = (workspaceId) => {
-    if (workspaces.length <= 1) return; // Don't delete the last workspace
+    if (workspaces.length <= 1) return;
     
     const updatedWorkspaces = workspaces.filter(w => w.id !== workspaceId);
     setWorkspaces(updatedWorkspaces);
     
-    // If deleted workspace was active, switch to first available
     if (activeWorkspace.id === workspaceId) {
       const newActive = updatedWorkspaces[0];
       setActiveWorkspace(newActive);
@@ -117,12 +144,12 @@ export const useWorkspace = () => {
 
   const toggleWorkspaceDropdown = () => {
     setShowWorkspaceDropdown(!showWorkspaceDropdown);
-    setShowCreateMenu(false); // Close create menu when opening dropdown
+    setShowCreateMenu(false);
   };
 
   const toggleCreateMenu = () => {
     setShowCreateMenu(!showCreateMenu);
-    setShowWorkspaceDropdown(false); // Close dropdown when opening create menu
+    setShowWorkspaceDropdown(false);
   };
 
 

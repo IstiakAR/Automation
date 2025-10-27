@@ -28,17 +28,16 @@ export default function TaskEditor(props) {
     onConnect,
   } = useFlow();
   const { onDragOver, onDrop } = useDragDrop(reactFlowInstance, setNodes);
-  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges);
+  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId);
   const reactFlowWrapper = useRef(null);
   const [taskId, setTaskId] = useState(props.taskId || 0);
 
   useEffect(() => {
     setTaskId(props.taskId || 0);
     
-    // Load saved data when taskId changes
-    if (props.taskId && props.taskId !== 0) {
+    if (props.taskId && props.taskId !== 0 && props.workspaceId) {
       const loadData = async () => {
-        const savedData = await loadFlowData(props.taskId);
+        const savedData = await loadFlowData(props.taskId, props.workspaceId);
         if (savedData) {
           setNodes(savedData.nodes);
           setEdges(savedData.edges);
@@ -49,7 +48,7 @@ export default function TaskEditor(props) {
       };
       loadData();
     }
-  }, [props.taskId, loadFlowData, setNodes, setEdges]);
+  }, [props.taskId, props.workspaceId, loadFlowData, setNodes, setEdges]);
 
   if(taskId === 0) {
     return <></>;
