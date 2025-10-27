@@ -19,7 +19,7 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
     toggleWorkspaceDropdown,
     toggleCreateMenu,
     toggleInlineTaskInput
-  } = useWorkspace();
+  } = useWorkspace({ setSelectedTaskId });
   
   if (isOpen) {
     return (

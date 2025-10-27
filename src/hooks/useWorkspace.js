@@ -47,6 +47,7 @@ export const useWorkspace = ({ setSelectedTaskId } = {}) => {
     setWorkspaces(updatedWorkspaces);
     setActiveWorkspace(workspace);
     setShowWorkspaceDropdown(false);
+    setSelectedTaskId(0);
     
     try {
       const appConfig = await appConfigDir();

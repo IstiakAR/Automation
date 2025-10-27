@@ -37,22 +37,29 @@ export default function TaskEditor(props) {
     
     if (props.taskId && props.taskId !== 0 && props.workspaceId) {
       const loadData = async () => {
+        console.log("Loading data for task:", props.taskId, "workspace:", props.workspaceId);
         const savedData = await loadFlowData(props.taskId, props.workspaceId);
         if (savedData) {
+          console.log("Loaded saved data:", savedData);
           setNodes(savedData.nodes);
           setEdges(savedData.edges);
         } else {
+          console.log("No saved data, clearing");
           setNodes([]);
           setEdges([]);
         }
       };
       loadData();
+    } else if (!props.taskId || props.taskId === 0) {
+      setNodes([]);
+      setEdges([]);
     }
-  }, [props.taskId, props.workspaceId, loadFlowData, setNodes, setEdges]);
+  }, [props.taskId, props.workspaceId]);
 
   if(taskId === 0) {
     return <></>;
   }
+  
   return (
     <div className="flex w-full h-full">
       <div className="flex-1" ref={reactFlowWrapper}>
