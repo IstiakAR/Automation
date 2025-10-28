@@ -1,9 +1,9 @@
-import { Globe, MousePointerClickIcon, Play, Square, Car } from "lucide-react";
+import { Globe, MousePointerClickIcon, Play, Square, Pause } from "lucide-react";
 
 export const RightbarCards = [
-  { icon: Globe, size: 50, name: "Browse", iconKey: "Globe", section: "Browsing", "task": "Open a web page" },
-  { icon: MousePointerClickIcon, size: 50, name: "Click", iconKey: "MousePointerClickIcon", section: "Actions", "task": "Click on an element" },
-  { icon: Play, size: 50, name: "Play", iconKey: "Play", section: "Actions", "task": "Play a video" },
-  { icon: Square, size: 50, name: "Stop", iconKey: "Square", section: "System", "task": "Stop a process" },
-  { icon: Car, size: 50, name: "Drive", iconKey: "Car", section: "System", "task": "Drive a vehicle" },
+  { icon: Play, name: "Start", iconKey: "Play", size: 50, section: "System", "task": "Start Flow" },
+  { icon: Square, name: "Stop", iconKey: "Square", size: 50, section: "System", "task": "Stop Flow" },
+  { icon: Pause, name: "Pause", iconKey: "Pause", size: 50, section: "System", "task": "Pause Flow" },
+  { icon: MousePointerClickIcon, name: "Click", iconKey: "MousePointerClickIcon", size: 50, section: "Actions", "task": "Click at (x,y)" },
+  { icon: Globe, name: "Browse", iconKey: "Globe", size: 50, section: "Browsing", "task": "Open a web page" },
 ];

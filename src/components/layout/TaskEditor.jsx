@@ -10,7 +10,8 @@ import TaskNode from "../common/TaskNode";
 import { useFlow } from "../../hooks/useFlow";
 import { useDragDrop } from "../../hooks/useDragDrop";
 import { useSaveFlowData } from "../../hooks/useSaveFlowData";
-
+import { Play } from "lucide-react";
+import { runTask } from "../../hooks/useRunTask";
 const nodeTypes = {
   taskNode: TaskNode,
 };
@@ -31,6 +32,7 @@ export default function TaskEditor(props) {
   const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId);
   const reactFlowWrapper = useRef(null);
   const [taskId, setTaskId] = useState(props.taskId || 0);
+  const [playOpacity, setPlayOpacity] = useState(1);
 
   useEffect(() => {
     setTaskId(props.taskId || 0);
@@ -61,7 +63,7 @@ export default function TaskEditor(props) {
   }
   
   return (
-    <div className="flex w-full h-full">
+    <div className="flex w-full h-full relative">
       <div className="flex-1" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
@@ -90,6 +92,17 @@ export default function TaskEditor(props) {
             showInteractive={false} 
           />
         </ReactFlow>
+        <div className="absolute top-2 right-2 z-50">
+          <Play 
+            className="border-white border-2 rounded-full p-1 w-10 h-10 text-white cursor-pointer"
+            style={{ opacity: playOpacity, transition: 'opacity 0.3s ease' }}
+            onClick={() => {
+              setPlayOpacity(0.5);
+              runTask(taskId, props.workspaceId);
+              setTimeout(() => setPlayOpacity(1), 200);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

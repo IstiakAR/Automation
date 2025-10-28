@@ -1,0 +1,7 @@
+[build]
+incremental = true
+
+[profile.dev]
+opt-level = 1
+incremental = true
+codegen-units = 256

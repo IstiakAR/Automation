@@ -69,7 +69,10 @@
 	```sh
 	npm run tauri dev
 	```
-
+	Or with no hot restart(you need to run it again for changes to take effect),
+	```sh
+	npm run tauri:dev
+	```
 6. **Build for production**
 	```sh
 	npm run tauri build
