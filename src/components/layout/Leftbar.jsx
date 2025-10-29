@@ -2,8 +2,10 @@ import { Settings, FileText, FolderKanban, ChevronsUpDown, SidebarClose, Gauge, 
 import { useState } from "react";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceCreateMenu from "../common/WorkspaceCreateMenu";
+import { useNavigate } from "react-router-dom";
 
 const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
+    const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
   const [inlineTaskName, setInlineTaskName] = useState("");
   const {
@@ -152,7 +154,7 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
           </div>
           <div
             className="p-2 w-full h-10 flex items-center gap-2 rounded text-white hover:bg-dark2 cursor-pointer"
-            onClick={() => setLogOpen(!logOpen)}
+            onClick={() => navigate('/Settings')}
           >
             <Settings size={20} /> Settings
           </div>

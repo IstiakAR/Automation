@@ -5,12 +5,12 @@ fn validate_command(command: &serde_json::Value) -> bool {
 }
 
 #[tauri::command]
-pub fn run_command(command: serde_json::Value) -> i32{
+pub fn run_command(command: serde_json::Value) -> tauri::Result<i32> {
     if validate_command(&command) {
         println!("Successful");
-        return 10;
+        Ok(10)
     } else {
         println!("Failed");
-        return -1;
+        Ok(-1)
     }
 }
