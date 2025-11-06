@@ -8,6 +8,6 @@ use enigo::{
 pub fn mouse_click(x: i32, y: i32, button: String, clicks: u8) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
 
-    enigo.move_mouse(100, 100, Rel).unwrap();
-    enigo.button(Button::Left, Click).unwrap();
-}    
+    enigo.move_mouse(x, y, Abs).unwrap();
+    enigo.button(Button::Right, Click).unwrap();
+}

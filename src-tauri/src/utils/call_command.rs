@@ -10,7 +10,7 @@ fn validate_command(command: &serde_json::Value) -> bool {
 pub fn run_command(command: serde_json::Value) {
     if validate_command(&command) {
         println!("Successful");
-        mouse_control::mouse_click(100, 100, "left".to_string(), 1);
+        mouse_control::mouse_click(500, 500, "right".to_string(), 1);
     } else {
         println!("Failed");
     }
