@@ -1,16 +1,17 @@
 use serde_json::json;
+use crate::commands::mouse_control;
+
 
 fn validate_command(command: &serde_json::Value) -> bool {
     command.is_object()
 }
 
 #[tauri::command]
-pub fn run_command(command: serde_json::Value) -> tauri::Result<i32> {
+pub fn run_command(command: serde_json::Value) {
     if validate_command(&command) {
         println!("Successful");
-        Ok(10)
+        mouse_control::mouse_click(100, 100, "left".to_string(), 1);
     } else {
         println!("Failed");
-        Ok(-1)
     }
 }

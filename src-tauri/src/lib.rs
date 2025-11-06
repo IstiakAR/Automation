@@ -1,6 +1,6 @@
 mod utils;
+mod commands;
 use utils::{call_command, call_service, helpers};
-
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
