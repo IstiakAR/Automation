@@ -1,11 +1,17 @@
 import { Handle, Position } from "@xyflow/react";
 import * as LucideIcons from "lucide-react";
 
-export default function TaskNode({ data }) {
+export default function TaskNode({ data, id }) {
   const IconComponent = LucideIcons[data.iconName] || LucideIcons.ClipboardCheck;
 
+  const handleDoubleClick = () => {
+    if (data.onDoubleClick) {
+      data.onDoubleClick({ ...data, nodeId: id });
+    }
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" onDoubleClick={handleDoubleClick}>
       <div className="bg-transparent text-white rounded-lg min-w-32 text-center 
                       border-2 border-gray-500 hover:border-blue-400 
                       shadow-md hover:shadow-lg transition-all duration-200">

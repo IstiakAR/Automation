@@ -3,7 +3,7 @@ const DraggableCard = (props) => {
         event.dataTransfer.setData('application/reactflow', JSON.stringify({
             name: props.name,
             iconName: props.iconKey,
-            task: props.task
+            args: props.args
         }));
         event.dataTransfer.effectAllowed = 'move';
     };

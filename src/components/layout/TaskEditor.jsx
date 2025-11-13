@@ -28,11 +28,42 @@ export default function TaskEditor(props) {
     onEdgesChange,
     onConnect,
   } = useFlow();
-  const { onDragOver, onDrop } = useDragDrop(reactFlowInstance, setNodes);
-  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId);
   const reactFlowWrapper = useRef(null);
   const [taskId, setTaskId] = useState(props.taskId || 0);
   const [playOpacity, setPlayOpacity] = useState(1);
+  const onNodeDoubleClickRef = useRef(props.onNodeDoubleClick);
+  
+  useEffect(() => {
+    onNodeDoubleClickRef.current = props.onNodeDoubleClick;
+  }, [props.onNodeDoubleClick]);
+
+  const { onDragOver, onDrop } = useDragDrop(reactFlowInstance, setNodes, onNodeDoubleClickRef.current);
+  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId);
+
+  useEffect(() => {
+    if (props.onUpdateNode) {
+      const updateNode = (updatedData) => {
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.id === updatedData.nodeId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: updatedData.label,
+                  command: updatedData.command,
+                  args: updatedData.args,
+                  onDoubleClick: onNodeDoubleClickRef.current,
+                },
+              };
+            }
+            return node;
+          })
+        );
+      };
+      props.onUpdateNode(updateNode);
+    }
+  }, [props.onUpdateNode, setNodes]);
 
   useEffect(() => {
     setTaskId(props.taskId || 0);
@@ -43,7 +74,14 @@ export default function TaskEditor(props) {
         const savedData = await loadFlowData(props.taskId, props.workspaceId);
         if (savedData) {
           console.log("Loaded saved data:", savedData);
-          setNodes(savedData.nodes);
+          const nodesWithHandler = savedData.nodes.map(node => ({
+            ...node,
+            data: {
+              ...node.data,
+              onDoubleClick: onNodeDoubleClickRef.current
+            }
+          }));
+          setNodes(nodesWithHandler);
           setEdges(savedData.edges);
         } else {
           console.log("No saved data, clearing");
@@ -56,7 +94,7 @@ export default function TaskEditor(props) {
       setNodes([]);
       setEdges([]);
     }
-  }, [props.taskId, props.workspaceId]);
+  }, [props.taskId, props.workspaceId, loadFlowData, setNodes, setEdges]);
 
   if(taskId === 0) {
     return <></>;

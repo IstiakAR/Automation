@@ -1,6 +1,7 @@
 mod utils;
 mod commands;
 use utils::{call_command, call_service, helpers};
+use commands::get_mouse_position;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,6 +10,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             call_command::run_command,
+            get_mouse_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
