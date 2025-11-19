@@ -9,13 +9,17 @@ module.exports = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-		fontFamily: {
-			sans: ['Space Mono', 'ui-sans-serif', 'system-ui'],
-		},
+  		fontFamily: {
+  			sans: [
+  				'Space Mono',
+  				'ui-sans-serif',
+  				'system-ui'
+  			]
+  		},
   		colors: {
-			dark0: '#171717',
-			dark1: '#161616',
-			dark2: '#282828',
+  			dark0: '#171717',
+  			dark1: '#161616',
+  			dark2: '#282828',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

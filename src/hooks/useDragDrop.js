@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 
-let id = 0;
-const getId = () => `node_${++id}`;
-
 export function useDragDrop(reactFlowInstance, setNodes, onNodeDoubleClick) {
+  const getId = useCallback(() => {
+    return `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }, []);
+
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -54,7 +55,7 @@ export function useDragDrop(reactFlowInstance, setNodes, onNodeDoubleClick) {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes, onNodeDoubleClick]
+    [reactFlowInstance, setNodes, onNodeDoubleClick, getId]
   );
 
   return {

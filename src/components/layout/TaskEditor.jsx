@@ -10,8 +10,9 @@ import TaskNode from "../common/TaskNode";
 import { useFlow } from "../../hooks/useFlow";
 import { useDragDrop } from "../../hooks/useDragDrop";
 import { useSaveFlowData } from "../../hooks/useSaveFlowData";
-import { Play } from "lucide-react";
-import { runTask } from "../../hooks/useRunTask";
+import { useFlowControl } from "../../hooks/useFlowControl";
+import { Play, Loader2 } from "lucide-react";
+
 const nodeTypes = {
   taskNode: TaskNode,
 };
@@ -30,8 +31,8 @@ export default function TaskEditor(props) {
   } = useFlow();
   const reactFlowWrapper = useRef(null);
   const [taskId, setTaskId] = useState(props.taskId || 0);
-  const [playOpacity, setPlayOpacity] = useState(1);
   const onNodeDoubleClickRef = useRef(props.onNodeDoubleClick);
+  const { startFlow, isLoading } = useFlowControl();
   
   useEffect(() => {
     onNodeDoubleClickRef.current = props.onNodeDoubleClick;
@@ -131,15 +132,22 @@ export default function TaskEditor(props) {
           />
         </ReactFlow>
         <div className="absolute top-2 right-2 z-50">
-          <Play 
-            className="border-white border-2 rounded-full p-1 w-10 h-10 text-white cursor-pointer"
-            style={{ opacity: playOpacity, transition: 'opacity 0.3s ease' }}
-            onClick={() => {
-              setPlayOpacity(0.5);
-              runTask(taskId, props.workspaceId);
-              setTimeout(() => setPlayOpacity(1), 200);
-            }}
-          />
+          {isLoading ? (
+            <Loader2 className="border-white border-2 rounded-full p-1 w-10 h-10 text-white animate-spin" />
+          ) : (
+            <Play 
+              className="border-white border-2 rounded-full p-1 w-10 h-10 text-white cursor-pointer hover:bg-white hover:text-black transition-colors"
+              onClick={async () => {
+                const result = await startFlow(taskId, props.workspaceId);
+                if (!result.success) {
+                  console.error('Failed to start flow:', result.error);
+                  alert(`Failed to start flow: ${result.error}`);
+                } else {
+                  console.log('Flow completed:', result.message);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

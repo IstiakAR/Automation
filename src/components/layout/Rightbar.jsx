@@ -31,7 +31,7 @@ const Rightbar = () => {
                 <div className="flex flex-row justify-between items-center cursor-pointer mb-2" onClick={() => toggleSection(section)}>
                     <div className="flex flex-row items-center gap-2">
                         <h3 className="text-white font-semibold">{section}</h3>
-                        <span className="text-gray-400 bg-slate-500 rounded-full w-5 h-5 flex items-center justify-center">{cards.length}</span>
+                        <span className="text-gray-300 bg-slate-500 rounded-full w-5 h-5 flex items-center justify-center">{cards.length}</span>
                     </div>
                     {collapsedSections[section] ?
                         <ChevronDown className="text-white" size={25}/>

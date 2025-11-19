@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::io::Result;
 
-pub fn open_browser(browser: &str, url: &str, new_tab: bool) -> Result<()> {
+pub fn open_browser(browser: &str, url: &str, new_tab: bool) -> Result<String> {
     #[cfg(target_os = "windows")]
     {
         let mut cmd = Command::new(browser);
@@ -30,5 +30,5 @@ pub fn open_browser(browser: &str, url: &str, new_tab: bool) -> Result<()> {
         cmd.arg(url).spawn()?;
     }
 
-    Ok(())
+    Ok(url.to_string())
 }
