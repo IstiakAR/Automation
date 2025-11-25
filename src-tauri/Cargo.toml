@@ -27,3 +27,5 @@ enigo = "0.6.1"
 reqwest = { version = "0.12", features = ["blocking"] }
 screenshots = "0.8"
 image = "0.25"
+rusqlite = { version = "0.32", features = ["bundled", "serde_json"] }
+anyhow = "1.0"

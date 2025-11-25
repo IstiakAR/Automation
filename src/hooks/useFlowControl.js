@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { join, appConfigDir } from '@tauri-apps/api/path';
-import { readTextFile } from "@tauri-apps/plugin-fs";
 
 export const useFlowControl = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,25 +12,21 @@ export const useFlowControl = () => {
 
     setIsLoading(true);
     try {
-      const configDir = await appConfigDir();
-      const filePath = await join(configDir, `flowData-${workspaceId}.json`);
-
-      let taskData = {};
-      try {
-        const fileContent = await readTextFile(filePath);
-        taskData = JSON.parse(fileContent);
-      } catch {
+      const flowData = await invoke('load_flow_graph', { flowId: taskId });
+      if (!flowData || !flowData.nodes || !flowData.edges) {
         setIsLoading(false);
         return { success: false, error: 'No flow data found' };
       }
 
-      const flowData = taskData[taskId];
-      if (!flowData) {
-        setIsLoading(false);
-        return { success: false, error: 'Task not found' };
-      }
-
-      const result = await invoke('start_flow', { command: flowData });
+      const result = await invoke('start_flow', { command: flowData })
+        .then((msg) => {
+          console.log('Success:', msg);
+          return msg;
+        })
+        .catch((err) => {
+          console.error('Flow error:', err);
+          throw err;
+        });
       
       setIsLoading(false);
       return { success: true, message: result };

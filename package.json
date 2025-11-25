@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri dev",
-    "tauri:dev": "tauri dev --no-watch"
+    "tauri:dev": "tauri dev --no-watch",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@tauri-apps/plugin-fs": "^2.4.3",

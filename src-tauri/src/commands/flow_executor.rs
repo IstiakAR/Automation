@@ -4,34 +4,29 @@ use serde_json::Value;
 use crate::commands::{mouse_control, browser_control, process_control, website_control, file_control, keyboard_control, display_control};
 use super::flow_control::{FlowController, FlowState, ExecutionAction};
 
-pub fn execute_node(
-    node: &Value, 
-    controller: &State<FlowController>,
-    parent_output: Option<&Value>
-) -> Result<ExecutionAction, String> {
-    if let Some(data) = node.get("data") {
-        let label = data.get("label").and_then(|v| v.as_str()).unwrap_or("");
-        let mut args = data.get("args").cloned().unwrap_or(Value::Object(serde_json::Map::new()));
-        
-        println!("Executing node: {}", label);
-        println!("Initial args: {:?}", args);
-        println!("Parent output: {:?}", parent_output);
-        
-        if let Some(parent_data) = parent_output {
-            if let (Some(args_obj), Some(parent_obj)) = (args.as_object_mut(), parent_data.as_object()) {
-                for (key, value) in parent_obj {
-                    // Insert if key doesn't exist OR if existing value is empty string
-                    let should_insert = !args_obj.contains_key(key) || 
-                        args_obj.get(key).and_then(|v| v.as_str()).map_or(false, |s| s.is_empty());
-                    
-                    if should_insert {
-                        args_obj.insert(key.clone(), value.clone());
-                    }
+fn merge_args(args: &Value, parent_output: Option<&Value>) -> Value {
+    let mut merged = args.clone();
+    if let Some(parent_data) = parent_output {
+        if let (Some(args_obj), Some(parent_obj)) = (merged.as_object_mut(), parent_data.as_object()) {
+            for (key, value) in parent_obj {
+                let should_insert = !args_obj.contains_key(key) || 
+                    args_obj.get(key).and_then(|v| v.as_str()).map_or(false, |s| s.is_empty());
+                
+                if should_insert {
+                    args_obj.insert(key.clone(), value.clone());
                 }
             }
         }
-        
-        println!("Final args after merge: {:?}", args);
+    }
+    merged
+}
+
+pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_output: Option<&Value>) -> Result<ExecutionAction, String> {
+    if let Some(data) = node.get("data") {
+        let label = data.get("label").and_then(|v| v.as_str()).unwrap_or("");
+        let mut args = data.get("args").cloned().unwrap_or(Value::Object(serde_json::Map::new()));
+
+        merge_args(&mut args, parent_output);
         
         match label {
             "Start" | "Start Flow" => {
@@ -171,61 +166,4 @@ pub fn execute_node(
     } else {
         Ok(ExecutionAction::Continue(None))
     }
-}
-
-pub fn build_execution_order(nodes: &Vec<Value>, edges: &Vec<Value>) -> Vec<String> {
-    use std::collections::HashSet;
-    
-    let mut graph: HashMap<String, Vec<String>> = HashMap::new();
-    let mut in_degree: HashMap<String, usize> = HashMap::new();
-    let mut all_nodes: HashSet<String> = HashSet::new();
-
-    for node in nodes {
-        if let Some(id) = node.get("id").and_then(|v| v.as_str()) {
-            all_nodes.insert(id.to_string());
-            in_degree.insert(id.to_string(), 0);
-            graph.insert(id.to_string(), Vec::new());
-        }
-    }
-
-    for edge in edges {
-        if let (Some(source), Some(target)) = (
-            edge.get("source").and_then(|v| v.as_str()),
-            edge.get("target").and_then(|v| v.as_str()),
-        ) {
-            graph.get_mut(source).unwrap().push(target.to_string());
-            *in_degree.get_mut(target).unwrap() += 1;
-        }
-    }
-
-    let mut queue: Vec<String> = Vec::new();
-    let mut result: Vec<String> = Vec::new();
-
-    for (node, degree) in &in_degree {
-        if *degree == 0 {
-            queue.push(node.clone());
-        }
-    }
-
-    queue.sort();
-
-    while !queue.is_empty() {
-        let current = queue.remove(0);
-        result.push(current.clone());
-
-        if let Some(neighbors) = graph.get(&current) {
-            let mut next_nodes = Vec::new();
-            for neighbor in neighbors {
-                let degree = in_degree.get_mut(neighbor).unwrap();
-                *degree -= 1;
-                if *degree == 0 {
-                    next_nodes.push(neighbor.clone());
-                }
-            }
-            next_nodes.sort();
-            queue.extend(next_nodes);
-        }
-    }
-
-    result
 }

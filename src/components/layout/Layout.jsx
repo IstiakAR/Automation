@@ -48,7 +48,7 @@ const Layout = ({ children }) => {
         <div className="flex flex-col flex-1 overflow-hidden">
           <TaskEditor 
             taskId={selectedTaskId} 
-            workspaceId={activeWorkspace.id} 
+            workspaceId={activeWorkspace?.id} 
             onAddNode={handleAddNodeFunction}
             onUpdateNode={handleUpdateNodeFunction}
             onNodeDoubleClick={handleNodeDoubleClick}

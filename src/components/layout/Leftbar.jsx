@@ -35,7 +35,7 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
               <div className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white">
                 <FolderKanban />
               </div>
-              <span className="truncate">{activeWorkspace.name}</span>
+              <span className="truncate">{activeWorkspace?.name}</span>
             </div>
             <ChevronsUpDown size={16} className="flex-shrink-0" />
           </div>
@@ -115,7 +115,7 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
               </div>
             )}
             
-            {activeWorkspace.tasks && activeWorkspace.tasks.length > 0 ? (
+            {activeWorkspace?.tasks && activeWorkspace.tasks.length > 0 ? (
               activeWorkspace.tasks.map((task) => (
                 <div key={task.id}
                   className="flex items-center justify-between gap-2 p-2 rounded text-white hover:bg-dark2 cursor-pointer group"

@@ -45,6 +45,43 @@ impl FlowController {
     }
 }
 
+fn validate_and_extract_command<'a>(command: &'a Value) -> Result<(&'a Vec<Value>, Vec<Value>), String> {
+    if !command.is_object() {
+        return Err("Invalid command format".to_string());
+    }
+
+    let nodes = command
+        .get("nodes")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "No nodes found in command".to_string())?;
+
+    let edges_vec = command
+        .get("edges")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    Ok((nodes, edges_vec))
+}
+
+fn build_parent_map(edges: &Vec<Value>) -> HashMap<String, Vec<String>> {
+    let mut parent_map: HashMap<String, Vec<String>> = HashMap::new();
+
+    for edge in edges {
+        if let (Some(source), Some(target)) = (
+            edge.get("source").and_then(|v| v.as_str()),
+            edge.get("target").and_then(|v| v.as_str()),
+        ) {
+            parent_map
+                .entry(target.to_string())
+                .or_insert_with(Vec::new)
+                .push(source.to_string());
+        }
+    }
+
+    parent_map
+}
+
 #[tauri::command]
 pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<String, String> {
     let current_state = controller.get_state();
@@ -57,28 +94,12 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
             controller.set_state(FlowState::Running);
             return Ok("Flow resumed".to_string());
         },
-        FlowState::Stopped => {
-            controller.set_state(FlowState::Running);
-        }
+        FlowState::Stopped => controller.set_state(FlowState::Running),
     }
 
-    if !command.is_object() {
-        return Err("Invalid command format".to_string());
-    }
+    let (nodes, edges) = validate_and_extract_command(&command)?;
 
-    let nodes = command.get("nodes")
-        .and_then(|v| v.as_array())
-        .ok_or("No nodes found in command")?;
-    
-    let empty_edges = vec![];
-    let edges = command.get("edges")
-        .and_then(|v| v.as_array())
-        .unwrap_or(&empty_edges);
-
-    let execution_order = flow_executor::build_execution_order(
-        &nodes.clone(), 
-        &edges.clone()
-    );
+    let execution_order = build_execution_order(nodes, &edges);
 
     println!("Execution order: {:?}", execution_order);
 
@@ -90,17 +111,7 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
         })
         .collect();
 
-    let mut parent_map: HashMap<String, Vec<String>> = HashMap::new();
-    for edge in edges.iter() {
-        if let (Some(source), Some(target)) = (
-            edge.get("source").and_then(|v| v.as_str()),
-            edge.get("target").and_then(|v| v.as_str()),
-        ) {
-            parent_map.entry(target.to_string())
-                .or_insert_with(Vec::new)
-                .push(source.to_string());
-        }
-    }
+    let parent_map = build_parent_map(&edges);
 
     let mut node_outputs: HashMap<String, Value> = HashMap::new();
 
@@ -163,4 +174,61 @@ pub fn get_flow_state(controller: State<FlowController>) -> String {
         FlowState::Paused => "paused".to_string(),
         FlowState::Stopped => "stopped".to_string(),
     }
+}
+
+pub fn build_execution_order(nodes: &Vec<Value>, edges: &Vec<Value>) -> Vec<String> {
+    use std::collections::HashSet;
+    
+    let mut graph: HashMap<String, Vec<String>> = HashMap::new();
+    let mut in_degree: HashMap<String, usize> = HashMap::new();
+    let mut all_nodes: HashSet<String> = HashSet::new();
+
+    for node in nodes {
+        if let Some(id) = node.get("id").and_then(|v| v.as_str()) {
+            all_nodes.insert(id.to_string());
+            in_degree.insert(id.to_string(), 0);
+            graph.insert(id.to_string(), Vec::new());
+        }
+    }
+
+    for edge in edges {
+        if let (Some(source), Some(target)) = (
+            edge.get("source").and_then(|v| v.as_str()),
+            edge.get("target").and_then(|v| v.as_str()),
+        ) {
+            graph.get_mut(source).unwrap().push(target.to_string());
+            *in_degree.get_mut(target).unwrap() += 1;
+        }
+    }
+
+    let mut queue: Vec<String> = Vec::new();
+    let mut result: Vec<String> = Vec::new();
+
+    for (node, degree) in &in_degree {
+        if *degree == 0 {
+            queue.push(node.clone());
+        }
+    }
+
+    queue.sort();
+
+    while !queue.is_empty() {
+        let current = queue.remove(0);
+        result.push(current.clone());
+
+        if let Some(neighbors) = graph.get(&current) {
+            let mut next_nodes = Vec::new();
+            for neighbor in neighbors {
+                let degree = in_degree.get_mut(neighbor).unwrap();
+                *degree -= 1;
+                if *degree == 0 {
+                    next_nodes.push(neighbor.clone());
+                }
+            }
+            next_nodes.sort();
+            queue.extend(next_nodes);
+        }
+    }
+
+    result
 }

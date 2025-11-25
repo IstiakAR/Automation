@@ -1,34 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { nanoid } from 'nanoid';
-import { writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
-import { join, appConfigDir, configDir } from "@tauri-apps/api/path";
-import { deleteTaskFromStorage } from "./useSaveFlowData";
+import { invoke } from "@tauri-apps/api/core";
 
-const initialWorkspaces = [
-  { 
-    id: 1, 
-    name: "Personal", 
-    active: true,
-    tasks: [
-      { id: 1, name: "Personal Task 1", createdAt: new Date().toISOString() },
-      { id: 2, name: "Personal Task 2", createdAt: new Date().toISOString() }
-    ]
-  },
-  { 
-    id: 2, 
-    name: "Istiak Ahammed Rhyme's team", 
-    active: false,
-    tasks: [
-      { id: 3, name: "Team Task 1", createdAt: new Date().toISOString() }
-    ]
-  },
-  { 
-    id: 3, 
-    name: "Work Project", 
-    active: false,
-    tasks: []
-  },
-];
+const initialWorkspaces = [];
 
 export const useWorkspace = ({ setSelectedTaskId } = {}) => {
   const [workspaces, setWorkspaces] = useState(initialWorkspaces);
@@ -39,6 +13,40 @@ export const useWorkspace = ({ setSelectedTaskId } = {}) => {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showInlineTaskInput, setShowInlineTaskInput] = useState(false);
 
+  useEffect(() => {
+    const loadWorkspacesAndFlows = async () => {
+      try {
+        const ws = await invoke("list_workspaces");
+        let workspacesWithTasks = [];
+
+        for (const w of ws) {
+          const flows = await invoke("list_flows_for_workspace", { workspaceId: w.id });
+          workspacesWithTasks.push({
+            id: w.id,
+            name: w.name,
+            active: false,
+            tasks: flows.map((f) => ({
+              id: f.id,
+              name: f.name,
+              createdAt: new Date().toISOString(),
+            })),
+          });
+        }
+
+        if (workspacesWithTasks.length !== 0) {
+          workspacesWithTasks[0].active = true;
+        }
+
+        setWorkspaces(workspacesWithTasks);
+        setActiveWorkspace(workspacesWithTasks[0]);
+      } catch (error) {
+        console.error("Error loading workspaces:", error);
+      }
+    };
+
+    loadWorkspacesAndFlows();
+  }, []);
+
   const handleWorkspaceSelect = async (workspace) => {
     const updatedWorkspaces = workspaces.map(w => ({
       ...w,
@@ -48,17 +56,6 @@ export const useWorkspace = ({ setSelectedTaskId } = {}) => {
     setActiveWorkspace(workspace);
     setShowWorkspaceDropdown(false);
     setSelectedTaskId(0);
-    
-    try {
-      const appConfig = await appConfigDir();
-      const filePath = await join(appConfig, `flowData-${workspace.id}.json`);
-      const fileExists = await exists(filePath);
-      if (!fileExists) {
-        await createWorkspaceFile(workspace.id);
-      }
-    } catch (error) {
-      console.error("Error handling workspace select:", error);
-    }
   };
 
   const createWorkspace = async (name) => {
@@ -68,24 +65,17 @@ export const useWorkspace = ({ setSelectedTaskId } = {}) => {
       active: false,
       tasks: []
     };
+    try {
+      await invoke("upsert_workspace", { id: newWorkspace.id, name: newWorkspace.name });
+    } catch (error) {
+      console.error("Error creating workspace in DB:", error);
+    }
     setWorkspaces(prev => [...prev, newWorkspace]);
     setShowCreateMenu(false);
     if (setSelectedTaskId) {
       setSelectedTaskId(0);
     }
-    createWorkspaceFile(newWorkspace.id);
   };
-
-  const createWorkspaceFile = async (workspaceId) => {
-    try {
-      const configDir = await appConfigDir();
-      await mkdir(configDir, { recursive: true });
-      const filePath = await join(configDir, `flowData-${workspaceId}.json`);
-      await writeTextFile(filePath, JSON.stringify({}, null, 2));
-    } catch (error) {
-      console.error("Error creating workspace file:", error);
-    }
-  }
 
   const createTaskInline = (taskName, workspaceId = activeWorkspace.id) => {
     const newTask = {
@@ -122,7 +112,9 @@ export const useWorkspace = ({ setSelectedTaskId } = {}) => {
         ...prev,
         tasks: prev.tasks.filter(task => task.id !== taskId)
       }));
-      deleteTaskFromStorage(taskId, workspaceId);
+      invoke("delete_flow", { id: taskId }).catch((e) =>
+        console.error("Error deleting flow from DB:", e)
+      );
     }
   };
 
