@@ -4,6 +4,7 @@ import {
   applyEdgeChanges,
   addEdge,
 } from "@xyflow/react";
+import { nanoid } from "nanoid";
 
 export function useFlow() {
   const [nodes, setNodes] = useState([]);
@@ -23,7 +24,18 @@ export function useFlow() {
   );
 
   const onConnect = useCallback(
-    (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
+    (connection) => {
+      setEdges((edgesSnapshot) =>
+        addEdge(
+          {
+            ...connection,
+            id: nanoid(),
+            handle: connection.sourceHandle === "out_2" ? "out_2" : "out_1",
+          },
+          edgesSnapshot
+        )
+      );
+    },
     []
   );
 

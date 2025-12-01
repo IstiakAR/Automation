@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use rusqlite::{params, Connection};
-
 use std::sync::Mutex;
 
 pub struct Db(pub Mutex<Connection>);
@@ -51,7 +50,8 @@ pub fn init_db(app_dir: PathBuf) -> anyhow::Result<Db> {
             id TEXT PRIMARY KEY,
             flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
             from_node TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-            to_node TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE
+            to_node TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+            handle TEXT NOT NULL CHECK(handle IN ('out_1','out_2'))
         );
         "#,
     )?;
@@ -155,6 +155,7 @@ impl Db {
     pub fn save_flow_graph(&self, flow_id: &str, nodes: &[JsonValue], edges: &[JsonValue]) -> anyhow::Result<()> {
         let mut conn = self.0.lock().unwrap();
         let tx = conn.transaction()?;
+        println!("{:?}", edges);
 
         tx.execute("DELETE FROM nodes WHERE flow_id = ?1", params![flow_id])?;
         tx.execute("DELETE FROM connections WHERE flow_id = ?1", params![flow_id])?;
@@ -191,14 +192,30 @@ impl Db {
         }
 
         for edge in edges {
-            let id = edge.get("id").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Edge missing id"))?;
-            let source = edge.get("source").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Edge missing source"))?;
-            let target = edge.get("target").and_then(|v| v.as_str()).ok_or_else(|| anyhow::anyhow!("Edge missing target"))?;
+            let conn_id = edge
+                .get("id")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Edge missing id"))?;
+
+            let handle = edge
+                .get("handle")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Edge missing handle"))?;
+
+            let source = edge
+                .get("source")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Edge missing source"))?;
+            let target = edge
+                .get("target")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow::anyhow!("Edge missing target"))?;
 
             tx.execute(
-                "INSERT INTO connections (id, flow_id, from_node, to_node) VALUES (?1, ?2, ?3, ?4)",
-                params![id, flow_id, source, target],
+                "INSERT INTO connections (id, flow_id, from_node, to_node, handle) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![conn_id, flow_id, source, target, handle],
             )?;
+            println!("Inserted connection: {} from {} to {} with handle {}", conn_id, source, target, handle);
         }
 
         tx.commit()?;
@@ -228,17 +245,22 @@ impl Db {
             })?
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut edge_stmt = conn.prepare("SELECT id, from_node, to_node FROM connections WHERE flow_id = ?1")?;
+        let mut edge_stmt = conn.prepare(
+            "SELECT id, from_node, to_node, handle FROM connections WHERE flow_id = ?1"
+        )?;
         let edges = edge_stmt
             .query_map(params![flow_id], |row| {
                 let id: String = row.get(0)?;
                 let from_node: String = row.get(1)?;
                 let to_node: String = row.get(2)?;
+                let handle: String = row.get(3)?;
 
                 Ok(serde_json::json!({
                     "id": id,
                     "source": from_node,
                     "target": to_node,
+                    "handle": handle,
+                    "sourceHandle": handle
                 }))
             })?
             .collect::<Result<Vec<_>, _>>()?;

@@ -1,8 +1,11 @@
 import { Handle, Position } from "@xyflow/react";
 import * as LucideIcons from "lucide-react";
+import { RightbarCards } from "../../data/rightbarCards";
 
-export default function TaskNode({ data, id }) {
-  const IconComponent = LucideIcons[data.iconName] || LucideIcons.ClipboardCheck;
+export default function TaskNode({ data, id, selected }) {
+  const card = RightbarCards.find((c) => c.name === data.label);
+  const iconName = card?.iconKey || "ClipboardCheck";
+  const IconComponent = LucideIcons[iconName] || LucideIcons.ClipboardCheck;
 
   const handleDoubleClick = () => {
     if (data.onDoubleClick) {
@@ -12,26 +15,33 @@ export default function TaskNode({ data, id }) {
 
   return (
     <div className="relative" onDoubleClick={handleDoubleClick}>
-      <div className="bg-transparent text-white rounded-lg min-w-32 text-center 
-                      border-2 border-gray-500 hover:border-blue-400 
-                      shadow-md hover:shadow-lg transition-all duration-200">
+      <div className={`rounded-md border text-xs bg-slate-900 text-white px-3 py-2 shadow ${
+        selected ? 'border-blue-500' : 'border-slate-600'
+      }`}>
         <div className="flex flex-col items-center gap-2 p-3">
           <IconComponent size={20} className="text-gray-200" />
-          <span className="text-sm font-medium">{data.label || "Task"}</span>
+          <span className="text-sm font-medium">{data.label}</span>
         </div>
       </div>
 
       <Handle
         type="target"
         position={Position.Top}
-        className="!bg-gray-500 !border-2 !border-gray-500 !w-3 !h-3 !rounded-full"
-        style={{ top: -8, left: "50%", transform: "translateX(-50%)" }}
+        className="h-2 w-2 -top-1 bg-blue-700"
       />
+
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!bg-gray-500 !border-2 !border-gray-500 !w-3 !h-3 !rounded-full"
-        style={{ bottom: -8, left: "50%", transform: "translateX(-50%)" }}
+        id="out_1"
+        className="h-2 w-2 -bottom-1 -ml-4 bg-green-700"
+      />
+
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="out_2"
+        className="h-2 w-2 -bottom-1 ml-4 bg-red-700"
       />
     </div>
   );

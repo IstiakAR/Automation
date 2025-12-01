@@ -84,6 +84,7 @@ export default function TaskEditor(props) {
           }));
           setNodes(nodesWithHandler);
           setEdges(savedData.edges);
+          console.log("Loaded edges:", savedData.edges);
         } else {
           console.log("No saved data, clearing");
           setNodes([]);
