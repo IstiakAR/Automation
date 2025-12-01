@@ -1,14 +1,12 @@
 import { Settings, FileText, FolderKanban, ChevronsUpDown, SidebarClose, Gauge, Plus, Check, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceCreateMenu from "../common/WorkspaceCreateMenu";
 import { useNavigate } from "react-router-dom";
 
-const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
-    const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
-  const [inlineTaskName, setInlineTaskName] = useState("");
-  const {
+const Leftbar = ({
+    logOpen,
+    setLogOpen,
+    setSelectedTaskId,
     workspaces,
     activeWorkspace,
     showWorkspaceDropdown,
@@ -20,8 +18,11 @@ const Leftbar = ({ logOpen, setLogOpen, setSelectedTaskId }) => {
     deleteTask,
     toggleWorkspaceDropdown,
     toggleCreateMenu,
-    toggleInlineTaskInput
-  } = useWorkspace({ setSelectedTaskId });
+    toggleInlineTaskInput,
+  }) => {
+    const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(true);
+  const [inlineTaskName, setInlineTaskName] = useState("");
   
   if (isOpen) {
     return (

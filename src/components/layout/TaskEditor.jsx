@@ -39,7 +39,7 @@ export default function TaskEditor(props) {
   }, [props.onNodeDoubleClick]);
 
   const { onDragOver, onDrop } = useDragDrop(reactFlowInstance, setNodes, onNodeDoubleClickRef.current);
-  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId);
+  const { loadFlowData } = useSaveFlowData(props.taskId, nodes, edges, props.workspaceId, props.taskName);
 
   useEffect(() => {
     if (props.onUpdateNode) {
@@ -71,7 +71,7 @@ export default function TaskEditor(props) {
     
     if (props.taskId && props.taskId !== 0 && props.workspaceId) {
       const loadData = async () => {
-        console.log("Loading data for task:", props.taskId, "workspace:", props.workspaceId);
+        console.log("[TaskEditor] Loading data for task:", props.taskId, "workspace:", props.workspaceId, "taskName:", props.taskName);
         const savedData = await loadFlowData(props.taskId, props.workspaceId);
         if (savedData) {
           console.log("Loaded saved data:", savedData);

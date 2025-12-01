@@ -14,7 +14,13 @@ const Layout = ({ children }) => {
   const [selectedTaskId, setSelectedTaskId] = useState(0);
   const [configBarOpen, setConfigBarOpen] = useState(false);
   const [configTaskData, setConfigTaskData] = useState(null);
-  const { activeWorkspace } = useWorkspace({ setSelectedTaskId });
+  const workspaceState = useWorkspace({ setSelectedTaskId });
+  const { activeWorkspace } = workspaceState;
+
+  const selectedTask =
+    activeWorkspace && activeWorkspace.tasks
+      ? activeWorkspace.tasks.find((t) => t.id === selectedTaskId)
+      : null;
 
   const handleAddNodeFunction = useCallback((addNodeFn) => {
     setAddNodeFunction(() => addNodeFn);
@@ -44,11 +50,17 @@ const Layout = ({ children }) => {
     <div className="select-none flex flex-col h-screen bg-dark0 overflow-hidden">
       <Topbar />
       <div className="flex flex-1 overflow-hidden">
-        <Leftbar logOpen={logOpen} setLogOpen={setLogOpen} setSelectedTaskId={setSelectedTaskId} />
+        <Leftbar 
+          logOpen={logOpen} 
+          setLogOpen={setLogOpen} 
+          setSelectedTaskId={setSelectedTaskId}
+          {...workspaceState}
+        />
         <div className="flex flex-col flex-1 overflow-hidden">
           <TaskEditor 
             taskId={selectedTaskId} 
             workspaceId={activeWorkspace?.id} 
+            taskName={selectedTask ? selectedTask.name : ""}
             onAddNode={handleAddNodeFunction}
             onUpdateNode={handleUpdateNodeFunction}
             onNodeDoubleClick={handleNodeDoubleClick}

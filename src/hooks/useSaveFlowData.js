@@ -2,17 +2,18 @@ import { useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 // save task
-export function useSaveFlowData(taskId, nodes, edges, workspaceId) {
+export function useSaveFlowData(taskId, nodes, edges, workspaceId, taskName) {
   useEffect(() => {
     if (taskId === 0 || !taskId || !workspaceId) return;
 
     const saveData = async () => {
       try {
+        console.log("[useSaveFlowData] Saving flow:", { taskId, workspaceId, taskName, nodeCount: nodes.length, edgeCount: edges.length });
         await invoke("upsert_flow", {
           id: taskId,
           workspaceId,
           folderId: null,
-          name: `Task ${taskId}`,
+          name: taskName,
         });
 
         await invoke("save_flow_graph", {
@@ -20,14 +21,13 @@ export function useSaveFlowData(taskId, nodes, edges, workspaceId) {
           nodes,
           edges,
         });
-        console.log(`Flow data saved for task ${taskId} in workspace ${workspaceId}`);
       } catch (error) {
         console.error("Error saving flow data to DB:", error);
       }
     };
 
     saveData();
-  }, [taskId, nodes, edges, workspaceId]);
+  }, [taskId, nodes, edges, workspaceId, taskName]);
 
   // Load nodes and edges
   const loadFlowData = useCallback(async (id, wsId) => {

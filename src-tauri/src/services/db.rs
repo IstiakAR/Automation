@@ -42,6 +42,8 @@ pub fn init_db(app_dir: PathBuf) -> anyhow::Result<Db> {
             flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
             name TEXT NOT NULL,
             args JSON,
+            pos_x REAL NOT NULL DEFAULT 0,
+            pos_y REAL NOT NULL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -170,9 +172,21 @@ impl Db {
                 .cloned()
                 .unwrap_or(JsonValue::Null);
 
+            let pos_x = node
+                .get("position")
+                .and_then(|p| p.get("x"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+
+            let pos_y = node
+                .get("position")
+                .and_then(|p| p.get("y"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+
             tx.execute(
-                "INSERT INTO nodes (id, flow_id, name, args) VALUES (?1, ?2, ?3, ?4)",
-                params![id, flow_id, name, args],
+                "INSERT INTO nodes (id, flow_id, name, args, pos_x, pos_y) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![id, flow_id, name, args, pos_x, pos_y],
             )?;
         }
 
@@ -193,17 +207,19 @@ impl Db {
 
     pub fn load_flow_graph(&self, flow_id: &str) -> anyhow::Result<SavedFlowGraph> {
         let conn = self.0.lock().unwrap();
-        let mut node_stmt = conn.prepare("SELECT id, name, args FROM nodes WHERE flow_id = ?1")?;
+        let mut node_stmt = conn.prepare("SELECT id, name, args, pos_x, pos_y FROM nodes WHERE flow_id = ?1")?;
         let nodes = node_stmt
             .query_map(params![flow_id], |row| {
                 let id: String = row.get(0)?;
                 let name: String = row.get(1)?;
                 let args: JsonValue = row.get(2)?;
+                let pos_x: f64 = row.get(3)?;
+                let pos_y: f64 = row.get(4)?;
 
                 Ok(serde_json::json!({
                     "id": id,
                     "type": "taskNode",
-                    "position": {"x": 0, "y": 0},
+                    "position": {"x": pos_x, "y": pos_y},
                     "data": {
                         "label": name,
                         "args": args,
