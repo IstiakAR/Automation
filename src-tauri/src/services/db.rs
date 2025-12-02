@@ -155,7 +155,6 @@ impl Db {
     pub fn save_flow_graph(&self, flow_id: &str, nodes: &[JsonValue], edges: &[JsonValue]) -> anyhow::Result<()> {
         let mut conn = self.0.lock().unwrap();
         let tx = conn.transaction()?;
-        println!("{:?}", edges);
 
         tx.execute("DELETE FROM nodes WHERE flow_id = ?1", params![flow_id])?;
         tx.execute("DELETE FROM connections WHERE flow_id = ?1", params![flow_id])?;
@@ -215,7 +214,6 @@ impl Db {
                 "INSERT INTO connections (id, flow_id, from_node, to_node, handle) VALUES (?1, ?2, ?3, ?4, ?5)",
                 params![conn_id, flow_id, source, target, handle],
             )?;
-            println!("Inserted connection: {} from {} to {} with handle {}", conn_id, source, target, handle);
         }
 
         tx.commit()?;

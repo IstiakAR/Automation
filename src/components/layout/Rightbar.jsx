@@ -3,7 +3,7 @@ import DraggableCard from "../common/DraggableCard";
 import { useRightbar } from "../../hooks/useRightbar";
 import { RightbarCards } from "../../data/rightbarCards";
 
-const Rightbar = () => {
+const Rightbar = (props) => {
     const {
         isOpen,
         filter,
@@ -42,7 +42,11 @@ const Rightbar = () => {
                 {!collapsedSections[section] && (
                 <div className="flex flex-row flex-wrap gap-2 justify-center">
                     {cards.map((card, index) => (
-                    <DraggableCard key={index} {...card} />
+                    <DraggableCard
+                        key={index}
+                        {...card}
+                        onSelectForPlacement={props.onSelectForPlacement}
+                    />
                     ))}
                 </div>
                 )}

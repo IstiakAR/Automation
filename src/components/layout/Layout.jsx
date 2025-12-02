@@ -14,6 +14,7 @@ const Layout = ({ children }) => {
   const [selectedTaskId, setSelectedTaskId] = useState(0);
   const [configBarOpen, setConfigBarOpen] = useState(false);
   const [configTaskData, setConfigTaskData] = useState(null);
+  const [pendingNodeTemplate, setPendingNodeTemplate] = useState(null);
   const workspaceState = useWorkspace({ setSelectedTaskId });
   const { activeWorkspace } = workspaceState;
 
@@ -64,11 +65,16 @@ const Layout = ({ children }) => {
             onAddNode={handleAddNodeFunction}
             onUpdateNode={handleUpdateNodeFunction}
             onNodeDoubleClick={handleNodeDoubleClick}
+            pendingNodeTemplate={pendingNodeTemplate}
+            onClearPendingTemplate={() => setPendingNodeTemplate(null)}
           />
           {logOpen && <Logger logOpen={logOpen} setLogOpen={setLogOpen} />}
         </div>
         {configBarOpen && <ConfigBar taskData={configTaskData} onClose={handleCloseConfigBar} onSave={handleSaveConfig} />}
-        <Rightbar addNode={addNodeFunction} />
+        <Rightbar
+          addNode={addNodeFunction}
+          onSelectForPlacement={setPendingNodeTemplate}
+        />
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ const nodeTypes = {
 };
 
 export default function TaskEditor(props) {
+  const { pendingNodeTemplate, onClearPendingTemplate } = props;
   const {
     nodes,
     setNodes,
@@ -114,6 +115,33 @@ export default function TaskEditor(props) {
           onInit={setReactFlowInstance}
           onDrop={onDrop}
           onDragOver={onDragOver}
+          onPaneClick={(event) => {
+            if (!pendingNodeTemplate || !reactFlowInstance) return;
+
+            const position = reactFlowInstance.screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            });
+
+            const id = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const { name, iconName, args } = pendingNodeTemplate;
+
+            setNodes((nds) => nds.concat({
+              id,
+              type: "taskNode",
+              position,
+              data: {
+                label: name,
+                iconName,
+                task: "No task description",
+                command: "",
+                args: args || {},
+                onDoubleClick: onNodeDoubleClickRef.current,
+              },
+            }));
+
+            onClearPendingTemplate();
+          }}
           nodeTypes={nodeTypes}
           fitView
           proOptions={{ hideAttribution: true }}
