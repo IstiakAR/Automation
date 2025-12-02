@@ -184,13 +184,13 @@ const Leftbar = ({
           />
           <div className="flex flex-col items-center">
             <div
-              className="h-10 flex items-center rounded hover:bg-dark2 cursor-pointer text-white"
+              className="h-10 flex items-center rounded cursor-pointer text-white"
               onClick={() => setLogOpen(!logOpen)}
             >
               <Gauge size={20} />
             </div>
             <div
-              className="h-10 flex items-center rounded hover:bg-dark2 cursor-pointer text-white"
+              className="h-10 flex items-center rounded cursor-pointer text-white"
               onClick={() => setLogOpen(!logOpen)}
             >
               <Settings size={20} />

@@ -138,15 +138,7 @@ export default function TaskEditor(props) {
           ) : (
             <Play 
               className="border-white border-2 rounded-full p-1 w-10 h-10 text-white cursor-pointer hover:bg-white hover:text-black transition-colors"
-              onClick={async () => {
-                const result = await startFlow(taskId, props.workspaceId);
-                if (!result.success) {
-                  console.error('Failed to start flow:', result.error);
-                  alert(`Failed to start flow: ${result.error}`);
-                } else {
-                  console.log('Flow completed:', result.message);
-                }
-              }}
+              onClick={async () => {await startFlow(taskId, props.workspaceId)}}
             />
           )}
         </div>

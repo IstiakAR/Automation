@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use tauri::State;
 use serde_json::Value;
 
@@ -64,22 +64,34 @@ fn validate_and_extract_command<'a>(command: &'a Value) -> Result<(&'a Vec<Value
     Ok((nodes, edges_vec))
 }
 
-fn build_parent_map(edges: &Vec<Value>) -> HashMap<String, Vec<String>> {
-    let mut parent_map: HashMap<String, Vec<String>> = HashMap::new();
+fn build_child_maps(edges: &Vec<Value>) -> (HashMap<String, Vec<String>>, HashMap<String, Vec<String>>) {
+    let mut success_children: HashMap<String, Vec<String>> = HashMap::new();
+    let mut error_children: HashMap<String, Vec<String>> = HashMap::new();
 
     for edge in edges {
         if let (Some(source), Some(target)) = (
             edge.get("source").and_then(|v| v.as_str()),
             edge.get("target").and_then(|v| v.as_str()),
         ) {
-            parent_map
-                .entry(target.to_string())
+            let handle = edge
+                .get("handle")
+                .and_then(|v| v.as_str())
+                .unwrap_or("out_1");
+
+            let entry_map = if handle == "out_2" {
+                &mut error_children
+            } else {
+                &mut success_children
+            };
+
+            entry_map
+                .entry(source.to_string())
                 .or_insert_with(Vec::new)
-                .push(source.to_string());
+                .push(target.to_string());
         }
     }
 
-    parent_map
+    (success_children, error_children)
 }
 
 #[tauri::command]
@@ -99,10 +111,6 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
 
     let (nodes, edges) = validate_and_extract_command(&command)?;
 
-    let execution_order = build_execution_order(nodes, &edges);
-
-    println!("Execution order: {:?}", execution_order);
-
     let node_map: HashMap<String, &Value> = nodes.iter()
         .filter_map(|node| {
             node.get("id")
@@ -111,12 +119,42 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
         })
         .collect();
 
-    let parent_map = build_parent_map(&edges);
-
     let mut node_outputs: HashMap<String, Value> = HashMap::new();
+    let (success_children, error_children) = build_child_maps(&edges);
 
+    // Build in-degree map to find starting nodes (no incoming edges)
+    let mut in_degree: HashMap<String, usize> = nodes
+        .iter()
+        .filter_map(|node| node.get("id").and_then(|v| v.as_str()).map(|id| (id.to_string(), 0usize)))
+        .collect();
+
+    for edge in &edges {
+        if let Some(target) = edge.get("target").and_then(|v| v.as_str()) {
+            if let Some(deg) = in_degree.get_mut(target) {
+                *deg += 1;
+            }
+        }
+    }
+
+    let mut queue: VecDeque<(String, Option<String>)> = in_degree
+        .iter()
+        .filter(|(_, &deg)| deg == 0)
+        .map(|(id, _)| (id.clone(), None))
+        .collect();
+
+    let mut roots: Vec<(String, Option<String>)> = queue.iter().cloned().collect();
+    roots.sort_by(|a, b| a.0.cmp(&b.0));
+    queue = roots.into_iter().collect();
+
+    let mut visited: HashMap<String, bool> = HashMap::new();
     let mut executed_count = 0;
-    for node_id in execution_order {
+
+    while let Some((node_id, parent_id)) = queue.pop_front() {
+        if visited.get(&node_id).copied().unwrap_or(false) {
+            continue;
+        }
+        visited.insert(node_id.clone(), true);
+
         let state = controller.get_state();
         if state == FlowState::Stopped {
             println!("Flow stopped by user");
@@ -129,20 +167,28 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
 
         if let Some(node) = node_map.get(&node_id) {
             controller.set_current_task(Some(node_id.clone()));
-            
-            let parent_output = parent_map.get(&node_id)
-                .and_then(|parents| parents.first())
-                .and_then(|parent_id| node_outputs.get(parent_id));
-            
+            let parent_output = parent_id
+                .as_ref()
+                .and_then(|pid| node_outputs.get(pid));
+
             match flow_executor::execute_node(node, &controller, parent_output) {
                 Ok(action) => {
                     executed_count += 1;
-                    
+
                     match action {
                         ExecutionAction::Continue(output) => {
                             if let Some(out) = output {
                                 node_outputs.insert(node_id.clone(), out);
                             }
+
+                            if let Some(children) = success_children.get(&node_id) {
+                                for child in children {
+                                    if !visited.get(child).copied().unwrap_or(false) {
+                                        queue.push_back((child.clone(), Some(node_id.clone())));
+                                    }
+                                }
+                            }
+
                             std::thread::sleep(std::time::Duration::from_millis(100));
                         },
                         ExecutionAction::Pause => {
@@ -154,8 +200,16 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
                     }
                 },
                 Err(e) => {
-                    controller.set_state(FlowState::Stopped);
-                    return Err(format!("Error executing node {}: {}", node_id, e));
+                    if let Some(children) = error_children.get(&node_id) {
+                        for child in children {
+                            if !visited.get(child).copied().unwrap_or(false) {
+                                queue.push_back((child.clone(), Some(node_id.clone())));
+                            }
+                        }
+                    }
+
+                    eprintln!("Error executing node {}: {}", node_id, e);
+                    continue;
                 }
             }
         }

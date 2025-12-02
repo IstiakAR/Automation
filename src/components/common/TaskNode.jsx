@@ -23,26 +23,31 @@ export default function TaskNode({ data, id, selected }) {
           <span className="text-sm font-medium">{data.label}</span>
         </div>
       </div>
-
+      {data.label !== "Start" && (
       <Handle
         type="target"
         position={Position.Top}
         className="h-2 w-2 -top-1 bg-blue-700"
       />
-
+      )}
+      {data.label !== "Stop" && (
       <Handle
         type="source"
         position={Position.Bottom}
         id="out_1"
         className="h-2 w-2 -bottom-1 -ml-4 bg-green-700"
       />
+      )}
 
+      {data.label !== "Stop" && (
       <Handle
         type="source"
         position={Position.Bottom}
         id="out_2"
         className="h-2 w-2 -bottom-1 ml-4 bg-red-700"
       />
+      )}
+
     </div>
   );
 };

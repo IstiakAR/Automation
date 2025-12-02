@@ -4,7 +4,7 @@ use serde_json::Value;
 use crate::commands::{mouse_control, browser_control, process_control, website_control, file_control, keyboard_control, display_control};
 use super::flow_control::{FlowController, FlowState, ExecutionAction};
 
-fn merge_args(args: &Value, parent_output: Option<&Value>) -> Value {
+fn merge_args(args: &mut Value, parent_output: Option<&Value>) {
     let mut merged = args.clone();
     if let Some(parent_data) = parent_output {
         if let (Some(args_obj), Some(parent_obj)) = (merged.as_object_mut(), parent_data.as_object()) {
@@ -18,7 +18,7 @@ fn merge_args(args: &Value, parent_output: Option<&Value>) -> Value {
             }
         }
     }
-    merged
+    *args = merged;
 }
 
 pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_output: Option<&Value>) -> Result<ExecutionAction, String> {
