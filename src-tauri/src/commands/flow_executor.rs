@@ -6,6 +6,8 @@ use crate::services::db::Db;
 use crate::commands::flow_control;
 
 fn merge_args(args: &mut Value, parent_output: Option<&Value>) {
+    println!("Original args: {}", args);
+    println!("Parent output: {:?}", parent_output);
     let mut merged = args.clone();
     if let Some(parent_data) = parent_output {
         if let (Some(args_obj), Some(parent_obj)) = (merged.as_object_mut(), parent_data.as_object()) {
@@ -19,6 +21,7 @@ fn merge_args(args: &mut Value, parent_output: Option<&Value>) {
             }
         }
     }
+    println!("Merged args: {}", merged);
     *args = merged;
 }
 
@@ -38,7 +41,7 @@ pub fn execute_node(
         match label {
             "Start" => {
                 println!("Flow control: Start marker");
-                Ok(ExecutionAction::Continue(None))
+                Ok(ExecutionAction::Continue(parent_output.cloned()))
             },
             "Pause" => {
                 let time_ms = args.get("time(in seconds)")
@@ -54,7 +57,7 @@ pub fn execute_node(
                 if time_ms > 0 {
                     println!("Flow control: Pausing for {} milliseconds", time_ms);
                     std::thread::sleep(std::time::Duration::from_millis(time_ms));
-                    Ok(ExecutionAction::Continue(None))
+                    Ok(ExecutionAction::Continue(parent_output.cloned()))
                 } else {
                     controller.set_state(FlowState::Paused);
                     Ok(ExecutionAction::Pause)
@@ -87,6 +90,7 @@ pub fn execute_node(
                 std::thread::sleep(std::time::Duration::from_millis(2000));
                 
                 let output = serde_json::json!({ "url": url });
+                println!("Output: {}", output);
                 Ok(ExecutionAction::Continue(Some(output)))
             },
             "Execute" => {
@@ -185,14 +189,13 @@ pub fn execute_node(
                     }
                 };
 
+                let mut sub_cmd = serde_json::Map::new();
+                sub_cmd.insert("nodes".to_string(), Value::Array(sub_graph.nodes));
+                sub_cmd.insert("edges".to_string(), Value::Array(sub_graph.edges));
+                let sub_cmd_value = Value::Object(sub_cmd);
 
-                let mut sub_command = serde_json::Map::new();
-                sub_command.insert("nodes".to_string(), Value::Array(sub_graph.nodes));
-                sub_command.insert("edges".to_string(), Value::Array(sub_graph.edges));
-                let sub_command_value = Value::Object(sub_command);
-
-                let (nodes, edges) = flow_control::validate_and_extract_command(&sub_command_value)
-                    .map_err(|e| format!("Failed to validate sub-task command: {}", e))?;
+                let (nodes, edges) = flow_control::validate_and_extract_command(&sub_cmd_value)
+                    .map_err(|e| format!("Failed to validate sub-task: {}", e))?;
 
                 let order = flow_control::build_execution_order(&nodes.clone(), &edges);
 
@@ -205,14 +208,25 @@ pub fn execute_node(
                     })
                     .collect();
 
+                let mut current_output = parent_output.cloned();
+
                 for node_id in order {
                     if let Some(sub_node) = node_map.get(&node_id) {
-                        let _ = execute_node(sub_node, controller, db, workspace_id, None)?;
+                        match execute_node(sub_node, controller, db, workspace_id, current_output.as_ref())? {
+                            ExecutionAction::Continue(out) => {
+                                if out.is_some() {
+                                    current_output = out;
+                                }
+                            }
+                            ExecutionAction::Pause => return Ok(ExecutionAction::Pause),
+                            ExecutionAction::Stop => return Ok(ExecutionAction::Stop),
+                        }
                     }
                 }
 
-                Ok(ExecutionAction::Continue(None))
-            },
+                Ok(ExecutionAction::Continue(current_output))
+            }
+
             _ => {
                 println!("Unknown command: {}", label);
                 Ok(ExecutionAction::Continue(None))
