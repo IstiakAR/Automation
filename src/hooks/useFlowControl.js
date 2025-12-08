@@ -18,7 +18,7 @@ export const useFlowControl = () => {
         return { success: false, error: 'No flow data found' };
       }
 
-      const result = await invoke('start_flow', { command: flowData })
+      const result = await invoke('start_flow', { command: flowData, workspaceId: workspaceId })
         .then((msg) => {
           console.log('Success:', msg);
           return msg;

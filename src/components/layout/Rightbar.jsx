@@ -25,7 +25,7 @@ const Rightbar = (props) => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-scroll scrollbar-hide min-h-0">
             {Object.entries(groupedCards).map(([section, cards]) => (
                 <div key={section} className="mb-6">
                 <div className="flex flex-row justify-between items-center cursor-pointer mb-2" onClick={() => toggleSection(section)}>

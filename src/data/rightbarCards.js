@@ -1,9 +1,10 @@
-import { Globe, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft } from "lucide-react";
+import { Globe, Waypoints, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft } from "lucide-react";
 
 export const RightbarCards = [
   { icon: Play, name: "Start", iconKey: "Play", size: 50, section: "Flow Control", command: "Start", task: "Start Flow", args: {} },
   { icon: Pause, name: "Pause", iconKey: "Pause", size: 50, section: "Flow Control", command: "Pause", task: "Pause Flow", args: {"time(in seconds)": 0} },
   { icon: Square, name: "Stop", iconKey: "Square", size: 50, section: "Flow Control", command: "Stop", task: "Stop Flow", args: {} },
+  { icon: Waypoints, name: "Task", iconKey: "Waypoints", size: 50, section: "Flow Control", command: "Task", task: "Use a subtask", args: {task: ""} },
   { icon: MousePointerClickIcon, name: "Click", iconKey: "MousePointerClickIcon", size: 50, section: "Actions", command: "Click", task: "Click at (x,y)", args: { x: 0, y: 0, button: "left", clicks: 1 } },
   { icon: Keyboard, name: "Type", iconKey: "Keyboard", size: 50, section: "Actions", command: "Type", task: "Type text", args: { text: "", delay_between_keys_ms: 0 } },
   { icon: CornerDownLeft, name: "PressEnter", iconKey: "CornerDownLeft", size: 50, section: "Actions", command: "Enter", task: "Press enter", args: {} },

@@ -3,7 +3,7 @@ mod commands;
 mod services;
 
 use tauri::Manager;
-use utils::{call_service, helpers};
+// use utils::{call_service, helpers};
 use commands::{
     get_mouse_position,
     FlowController,
@@ -18,7 +18,7 @@ use commands::{
     save_flow_graph,
     load_flow_graph,
 };
-use services::db::{init_db, Db};
+use services::db::{init_db};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

@@ -7,6 +7,7 @@ use enigo::{
 use serde::Serialize;
 
 #[derive(Serialize)]
+#[allow(dead_code)]
 pub struct MousePosition {
     pub x: i32,
     pub y: i32,
@@ -27,5 +28,20 @@ pub fn mouse_click(x: i32, y: i32, button: String, clicks: u8) {
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
 
     enigo.move_mouse(x, y, Abs).unwrap();
-    enigo.button(Button::Right, Click).unwrap();
+    for _ in 0..clicks {
+        match button.as_str() {
+            "left" => {
+                enigo.button(Button::Left, Click).unwrap();
+            },
+            "right" => {
+                enigo.button(Button::Right, Click).unwrap();
+            },
+            "middle" => {
+                enigo.button(Button::Middle, Click).unwrap();
+            },
+            _ => {
+                enigo.button(Button::Left, Click).unwrap();
+            }
+        }
+    }
 }

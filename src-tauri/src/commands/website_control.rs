@@ -1,6 +1,6 @@
 use std::io::Result;
 
-pub fn getHTMLContent(url: &str) -> Result<String> {
+pub fn get_html_content(url: &str) -> Result<String> {
     if url.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,

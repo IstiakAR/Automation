@@ -265,5 +265,30 @@ impl Db {
 
         Ok(SavedFlowGraph { nodes, edges })
     }
+
+    pub fn load_flow_graph_by_name(
+        &self,
+        workspace_id: &str,
+        name: &str,
+    ) -> anyhow::Result<Option<SavedFlowGraph>> {
+        let conn = self.0.lock().unwrap();
+
+        let mut stmt = conn.prepare(
+            "SELECT id FROM flows WHERE workspace_id = ?1 AND name = ?2 LIMIT 1",
+        )?;
+
+        let mut rows = stmt.query(params![workspace_id, name])?;
+        if let Some(row) = rows.next()? {
+            let flow_id: String = row.get(0)?;
+            drop(rows);
+            drop(stmt);
+            drop(conn);
+
+            let graph = self.load_flow_graph(&flow_id)?;
+            Ok(Some(graph))
+        } else {
+            Ok(None)
+        }
+    }
 }
 

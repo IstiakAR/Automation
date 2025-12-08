@@ -23,7 +23,8 @@ const Leftbar = ({
     const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
   const [inlineTaskName, setInlineTaskName] = useState("");
-  
+  const [inlineTaskError, setInlineTaskError] = useState(false);
+
   if (isOpen) {
     return (
       <div className="relative w-64 h-full bg-dark0 border-r border-dark2 flex flex-col p-4 justify-between">
@@ -94,8 +95,16 @@ const Leftbar = ({
                   onChange={(e) => setInlineTaskName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && inlineTaskName.trim()) {
+                      const exists = activeWorkspace?.tasks?.some(
+                        (t) => t.name === inlineTaskName.trim()
+                      );
+                      if (exists) {
+                        setInlineTaskError(true);
+                        return;
+                      }
                       createTaskInline(inlineTaskName.trim());
                       setInlineTaskName("");
+                      setInlineTaskError(false);
                     } else if (e.key === 'Escape') {
                       setInlineTaskName("");
                       toggleInlineTaskInput();
@@ -104,13 +113,17 @@ const Leftbar = ({
                   onBlur={() => {
                     if (inlineTaskName.trim()) {
                       createTaskInline(inlineTaskName.trim());
-                      setInlineTaskName("");
+                      if (!inlineTaskError) {
+                        setInlineTaskName("");
+                      }
                     } else {
                       toggleInlineTaskInput();
                     }
                   }}
                   placeholder="Task name..."
-                  className="w-full px-2 py-1 text-sm bg-dark2 text-white border border-dark2 rounded focus:border-blue-500 focus:outline-none"
+                  className={`w-full px-2 py-1 text-sm bg-dark2 text-white border rounded focus:outline-none ${
+                    inlineTaskError ? 'border-red-500' : 'border-dark2 focus:border-blue-500'
+                  }`}
                   autoFocus
                 />
               </div>

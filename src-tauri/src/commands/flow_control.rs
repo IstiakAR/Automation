@@ -4,6 +4,7 @@ use tauri::State;
 use serde_json::Value;
 
 use crate::commands::flow_executor;
+use crate::services::db::Db;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum FlowState {
@@ -45,7 +46,7 @@ impl FlowController {
     }
 }
 
-fn validate_and_extract_command<'a>(command: &'a Value) -> Result<(&'a Vec<Value>, Vec<Value>), String> {
+pub fn validate_and_extract_command<'a>(command: &'a Value) -> Result<(&'a Vec<Value>, Vec<Value>), String> {
     if !command.is_object() {
         return Err("Invalid command format".to_string());
     }
@@ -94,23 +95,13 @@ fn build_child_maps(edges: &Vec<Value>) -> (HashMap<String, Vec<String>>, HashMa
     (success_children, error_children)
 }
 
-#[tauri::command]
-pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<String, String> {
-    let current_state = controller.get_state();
-    
-    match current_state {
-        FlowState::Running => {
-            return Err("Flow is already running".to_string());
-        },
-        FlowState::Paused => {
-            controller.set_state(FlowState::Running);
-            return Ok("Flow resumed".to_string());
-        },
-        FlowState::Stopped => controller.set_state(FlowState::Running),
-    }
-
-    let (nodes, edges) = validate_and_extract_command(&command)?;
-
+fn execute_flow(
+    nodes: &Vec<Value>,
+    edges: &Vec<Value>,
+    controller: &State<FlowController>,
+    db: &State<Db>,
+    workspace_id: &str,
+) -> Result<String, String> {
     let node_map: HashMap<String, &Value> = nodes.iter()
         .filter_map(|node| {
             node.get("id")
@@ -120,15 +111,14 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
         .collect();
 
     let mut node_outputs: HashMap<String, Value> = HashMap::new();
-    let (success_children, error_children) = build_child_maps(&edges);
+    let (success_children, error_children) = build_child_maps(edges);
 
-    // Build in-degree map to find starting nodes (no incoming edges)
     let mut in_degree: HashMap<String, usize> = nodes
         .iter()
         .filter_map(|node| node.get("id").and_then(|v| v.as_str()).map(|id| (id.to_string(), 0usize)))
         .collect();
 
-    for edge in &edges {
+    for edge in edges {
         if let Some(target) = edge.get("target").and_then(|v| v.as_str()) {
             if let Some(deg) = in_degree.get_mut(target) {
                 *deg += 1;
@@ -171,7 +161,7 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
                 .as_ref()
                 .and_then(|pid| node_outputs.get(pid));
 
-            match flow_executor::execute_node(node, &controller, parent_output) {
+            match flow_executor::execute_node(node, &controller, db, workspace_id, parent_output) {
                 Ok(action) => {
                     executed_count += 1;
 
@@ -218,6 +208,29 @@ pub fn start_flow(command: Value, controller: State<FlowController>) -> Result<S
     controller.set_state(FlowState::Stopped);
     controller.set_current_task(None);
     Ok(format!("Flow completed successfully. Executed {} nodes", executed_count))
+}
+
+#[tauri::command]
+pub fn start_flow(
+    command: Value,
+    controller: State<FlowController>,
+    db: State<Db>,
+    workspace_id: String,
+) -> Result<String, String> {
+    let current_state = controller.get_state();
+    match current_state {
+        FlowState::Running => {
+            return Err("Flow is already running".to_string());
+        },
+        FlowState::Paused => {
+            controller.set_state(FlowState::Running);
+            return Ok("Flow resumed".to_string());
+        },
+        FlowState::Stopped => controller.set_state(FlowState::Running),
+    }
+
+    let (nodes, edges) = validate_and_extract_command(&command)?;
+    execute_flow(&nodes.to_vec(), &edges, &controller, &db, &workspace_id)
 }
 
 #[tauri::command]

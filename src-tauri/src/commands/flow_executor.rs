@@ -1,8 +1,9 @@
-use std::collections::HashMap;
 use tauri::State;
 use serde_json::Value;
 use crate::commands::{mouse_control, browser_control, process_control, website_control, file_control, keyboard_control, display_control};
 use super::flow_control::{FlowController, FlowState, ExecutionAction};
+use crate::services::db::Db;
+use crate::commands::flow_control;
 
 fn merge_args(args: &mut Value, parent_output: Option<&Value>) {
     let mut merged = args.clone();
@@ -21,7 +22,13 @@ fn merge_args(args: &mut Value, parent_output: Option<&Value>) {
     *args = merged;
 }
 
-pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_output: Option<&Value>) -> Result<ExecutionAction, String> {
+pub fn execute_node(
+    node: &Value,
+    controller: &State<FlowController>,
+    db: &State<Db>,
+    workspace_id: &str,
+    parent_output: Option<&Value>,
+) -> Result<ExecutionAction, String> {
     if let Some(data) = node.get("data") {
         let label = data.get("label").and_then(|v| v.as_str()).unwrap_or("");
         let mut args = data.get("args").cloned().unwrap_or(Value::Object(serde_json::Map::new()));
@@ -29,11 +36,11 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
         merge_args(&mut args, parent_output);
         
         match label {
-            "Start" | "Start Flow" => {
+            "Start" => {
                 println!("Flow control: Start marker");
                 Ok(ExecutionAction::Continue(None))
             },
-            "Pause" | "Pause Flow" => {
+            "Pause" => {
                 let time_ms = args.get("time(in seconds)")
                     .and_then(|v| v.as_f64())
                     .map(|seconds| (seconds * 1000.0) as u64)
@@ -53,7 +60,7 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
                     Ok(ExecutionAction::Pause)
                 }
             },
-            "Stop" | "Stop Flow" => {
+            "Stop" => {
                 println!("Flow control: Stop marker - stopping execution");
                 controller.set_state(FlowState::Stopped);
                 Ok(ExecutionAction::Stop)
@@ -64,7 +71,7 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
                 let button = args.get("button").and_then(|v| v.as_str()).unwrap_or("left");
                 let clicks = args.get("clicks").and_then(|v| v.as_u64()).unwrap_or(1) as u8;
                 
-                mouse_control::mouse_click(x, y, button.to_string(), clicks);
+                let _ = mouse_control::mouse_click(x, y, button.to_string(), clicks);
                 println!("Executed: Click at ({}, {})", x, y);
                 
                 Ok(ExecutionAction::Continue(None))
@@ -74,7 +81,7 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
                 let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
                 let new_tab = args.get("new_tab").and_then(|v| v.as_bool()).unwrap_or(false);
                 
-                browser_control::open_browser(browser, url, new_tab);
+                let _ = browser_control::open_browser(browser, url, new_tab);
                 println!("Executed: Browse {} in {}", url, browser);
                 
                 std::thread::sleep(std::time::Duration::from_millis(2000));
@@ -97,13 +104,13 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
                 let text = args.get("text").and_then(|v| v.as_str()).unwrap_or("");
                 let delay = args.get("delay_between_keys_ms").and_then(|v| v.as_u64()).unwrap_or(0);
                 
-                keyboard_control::type_text(text.to_string(), delay);
+                let _ = keyboard_control::type_text(text.to_string(), delay);
                 println!("Typed: {}", text);
                 
                 Ok(ExecutionAction::Continue(None))
             },
             "Enter" | "PressEnter" => {
-                keyboard_control::press_enter();
+                let _ = keyboard_control::press_enter();
                 println!("Pressed Enter");
                 
                 Ok(ExecutionAction::Continue(None))
@@ -111,7 +118,7 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
             "GetHTML" => {
                 let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
                 
-                match website_control::getHTMLContent(url) {
+                match website_control::get_html_content(url) {
                     Ok(html) => {
                         println!("Retrieved HTML from: {}", url);
                         let output = serde_json::json!({ "html": html });
@@ -157,6 +164,54 @@ pub fn execute_node(node: &Value, controller: &State<FlowController>, parent_out
                     },
                     Err(e) => Err(format!("Failed to take screenshot: {}", e))
                 }
+            },
+            "Task" => {
+                let task_name = args.get("task").and_then(|v| v.as_str()).unwrap_or("");
+                if task_name.is_empty() {
+                    return Err("Task node missing taskName".to_string());
+                }
+
+                let sub_graph_opt = db
+                    .load_flow_graph_by_name(workspace_id, task_name)
+                    .map_err(|e| format!("Failed to load sub-task graph: {}", e))?;
+
+                let sub_graph = match sub_graph_opt {
+                    Some(g) => g,
+                    None => {
+                        return Err(format!(
+                            "No sub-task flow found for name '{}' in workspace '{}'",
+                            task_name, workspace_id
+                        ));
+                    }
+                };
+
+
+                let mut sub_command = serde_json::Map::new();
+                sub_command.insert("nodes".to_string(), Value::Array(sub_graph.nodes));
+                sub_command.insert("edges".to_string(), Value::Array(sub_graph.edges));
+                let sub_command_value = Value::Object(sub_command);
+
+                let (nodes, edges) = flow_control::validate_and_extract_command(&sub_command_value)
+                    .map_err(|e| format!("Failed to validate sub-task command: {}", e))?;
+
+                let order = flow_control::build_execution_order(&nodes.clone(), &edges);
+
+                let node_map: std::collections::HashMap<String, &Value> = nodes
+                    .iter()
+                    .filter_map(|node| {
+                        node.get("id")
+                            .and_then(|id| id.as_str())
+                            .map(|id| (id.to_string(), node))
+                    })
+                    .collect();
+
+                for node_id in order {
+                    if let Some(sub_node) = node_map.get(&node_id) {
+                        let _ = execute_node(sub_node, controller, db, workspace_id, None)?;
+                    }
+                }
+
+                Ok(ExecutionAction::Continue(None))
             },
             _ => {
                 println!("Unknown command: {}", label);

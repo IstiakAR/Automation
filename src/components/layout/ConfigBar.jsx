@@ -47,17 +47,6 @@ const ConfigBar = ({ taskData, onClose, onSave }) => {
 
       <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
         <div>
-          <label className="text-gray-400 text-sm">Task</label>
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            className="bg-dark2 text-white rounded p-2 w-full mt-1 border border-dark3 focus:border-blue-500 focus:outline-none"
-            readOnly
-          />
-        </div>
-
-        <div>
           <div className="flex flex-col gap-3">
             {Object.keys(args).length > 0 ? (
               Object.entries(args).map(([key, value]) => (
