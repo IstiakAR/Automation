@@ -29,3 +29,8 @@ xcap = "0.7.1"
 image = "0.25"
 rusqlite = { version = "0.32", features = ["bundled", "serde_json"] }
 anyhow = "1.0"
+
+zip = "0.6"
+tar = "0.4"
+flate2 = "1.0"
+

@@ -1,4 +1,4 @@
-import { Globe, Waypoints, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft } from "lucide-react";
+import { Globe, Waypoints, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft, FolderPlus, Copy, Move, Edit3, Archive, Trash2} from "lucide-react";
 
 export const RightbarCards = [
   { icon: Play, name: "Start", iconKey: "Play", size: 50, section: "Flow Control", command: "Start", task: "Start Flow", args: {} },
@@ -12,5 +12,16 @@ export const RightbarCards = [
   { icon: AppWindow, name: "Execute", iconKey: "AppWindow", size: 50, section: "System", command: "Execute", task: "Execute a program", args: { exec: "", argument: [] } },
   { icon: Save, name: "Save", iconKey: "Save", size: 50, section: "System", command: "Save", task: "Save to a file", args: { filename: "", content: "" } },
   { icon: Code, name: "GetHTML", iconKey: "Code", size: 50, section: "System", command: "GetHTML", task: "Get html", args: { url: "" } },
-  { icon: Wallpaper, name: "Screenshot", iconKey: "Wallpaper", size: 50, section: "System", command: "Screenshot", task: "Take a screenshot", args: { save_path: "" } }
+  { icon: Wallpaper, name: "Screenshot", iconKey: "Wallpaper", size: 50, section: "System", command: "Screenshot", task: "Take a screenshot", args: { save_path: "" } },
+   { icon: FolderPlus, name: "CreateFolder", iconKey: "FolderPlus", size: 50, section: "File System", command: "CreateFolder", task: "Create a folder", args: { path: "" } },
+  { icon: Edit3, name: "RenameFile", iconKey: "Edit3", size: 50, section: "File System", command: "RenameFile", task: "Rename a file", args: { from: "", to: "" } },
+
+  { icon: Copy, name: "CopyFile", iconKey: "Copy", size: 50, section: "File System", command: "CopyFile", task: "Copy a file", args: { from: "", to: "" } },
+
+  { icon: Move, name: "MoveFile", iconKey: "Move", size: 50, section: "File System", command: "MoveFile", task: "Move a file", args: { from: "", to: "" } },
+
+  { icon: Archive, name: "ExtractArchive", iconKey: "Archive", size: 50, section: "File System", command: "ExtractArchive", task: "Extract ZIP/TAR archive", args: { archive: "", destination: "" } },
+
+  { icon: Trash2, name: "CleanFolder", iconKey: "Trash2", size: 50, section: "File System", command: "CleanFolder", task: "Clean all files in a folder", args: { path: "" } },
+ 
 ];

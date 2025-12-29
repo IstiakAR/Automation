@@ -225,8 +225,54 @@ pub fn execute_node(
                 }
 
                 Ok(ExecutionAction::Continue(current_output))
-            }
+            },
+                        "CreateFolder" => {
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::create_dir_all(path)
+                    .map_err(|e| format!("Failed to create folder: {}", e))?;
+                println!("Created folder: {}", path);
+                Ok(ExecutionAction::Continue(None))
+            },
 
+            "CopyFile" => {
+                let from = args.get("from").and_then(|v| v.as_str()).unwrap_or("");
+                let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::copy(from, to)
+                    .map_err(|e| format!("Failed to copy file: {}", e))?;
+                println!("Copied file from {} to {}", from, to);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "MoveFile" | "RenameFile" => {
+                let from = args.get("from").and_then(|v| v.as_str()).unwrap_or("");
+                let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::rename(from, to)
+                    .map_err(|e| format!("Failed to move/rename file: {}", e))?;
+                println!("Moved/Renamed file from {} to {}", from, to);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "CleanFolder" => {
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                for entry in std::fs::read_dir(path)
+                    .map_err(|e| format!("Failed to read directory: {}", e))? {
+                    let entry = entry.map_err(|e| e.to_string())?;
+                    let p = entry.path();
+                    if p.is_file() {
+                        std::fs::remove_file(&p)
+                            .map_err(|e| format!("Failed to delete {:?}: {}", p, e))?;
+                    }
+                }
+                println!("Cleaned folder: {}", path);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "ExtractArchive" => {
+    file_control::extract_zip(&args)
+        .map_err(|e| e.to_string())?;
+
+    Ok(ExecutionAction::Continue(None))
+},
             _ => {
                 println!("Unknown command: {}", label);
                 Ok(ExecutionAction::Continue(None))
