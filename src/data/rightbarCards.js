@@ -1,4 +1,4 @@
-import { Globe, Waypoints, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft, FolderPlus, Copy, Move, Edit3, Archive, Trash2} from "lucide-react";
+import { Globe, Waypoints, MousePointerClickIcon, Play, Square, Pause, AppWindow, Save, Code, Wallpaper, Keyboard, CornerDownLeft, FolderPlus, Copy, Move, Edit3, Archive, Trash2, Mail, ArrowDownCircle, ArrowUpToLine} from "lucide-react";
 
 export const RightbarCards = [
   { icon: Play, name: "Start", iconKey: "Play", size: 50, section: "Flow Control", command: "Start", task: "Start Flow", args: {} },
@@ -23,5 +23,13 @@ export const RightbarCards = [
   { icon: Archive, name: "ExtractArchive", iconKey: "Archive", size: 50, section: "File System", command: "ExtractArchive", task: "Extract ZIP/TAR archive", args: { archive: "", destination: "" } },
 
   { icon: Trash2, name: "CleanFolder", iconKey: "Trash2", size: 50, section: "File System", command: "CleanFolder", task: "Clean all files in a folder", args: { path: "" } },
- 
+   {
+  icon: Mail, name: "SendEmail",  iconKey: "Mail",  size: 50,   section: "Communication",   command: "SendEmail",  task: "Send an email",
+  args: { smtp_email: "", smtp_password: "", to: "" , subject: "",  body: "", attachments_file_path: []
+  }
+},
+{ icon: ArrowDownCircle, name: "HTTPGet", iconKey: "ArrowDownCircle", size: 50, section: "Networking", command: "HTTPGet", task: "Make an HTTP GET request", args: { url: "", response_save_path:"", open_after: false} },
+{ icon: ArrowUpToLine, name: "HTTPPost", iconKey: "ArrowUpToLine", size: 50, section: "Networking", command: "HTTPPost", task: "Make an HTTP POST request", args: { url: "", file_path: "" } },
+
+
 ];

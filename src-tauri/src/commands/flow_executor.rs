@@ -1,7 +1,8 @@
 use tauri::State;
 use serde_json::Value;
-use crate::commands::{mouse_control, browser_control, process_control, website_control, file_control, keyboard_control, display_control};
+use crate::commands::{mouse_control, browser_control, process_control, website_control, file_control, keyboard_control, display_control,http_post_control,https_get_control};
 use super::flow_control::{FlowController, FlowState, ExecutionAction};
+use crate::commands::email_control::send_email_with_attachments;
 use crate::services::db::Db;
 use crate::commands::flow_control;
 
@@ -266,19 +267,98 @@ pub fn execute_node(
                 println!("Cleaned folder: {}", path);
                 Ok(ExecutionAction::Continue(None))
             },
-
             "ExtractArchive" => {
-    file_control::extract_zip(&args)
-        .map_err(|e| e.to_string())?;
+                file_control::extract_zip(&args)
+                    .map_err(|e| e.to_string())?;
+
+                Ok(ExecutionAction::Continue(None))
+            },
+
+           "SendEmail" => {
+    let smtp_email = args.get("smtp_email").and_then(|v| v.as_str()).unwrap_or("");
+    let smtp_password = args.get("smtp_password").and_then(|v| v.as_str()).unwrap_or("");
+    let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+    let subject = args.get("subject").and_then(|v| v.as_str()).unwrap_or("");
+    let body = args.get("body").and_then(|v| v.as_str()).unwrap_or("");
+
+    // ✅ FIXED attachment parsing
+    let attachment_paths: Vec<String> = args
+        .get("attachments_file_path")
+        .and_then(|v| v.as_str())
+        .map(|s| {
+            let cleaned = s
+                .trim()
+                .trim_start_matches('[')
+                .trim_end_matches(']');
+
+            cleaned
+                .split(';')
+                .map(|p| p.trim().to_string())
+                .filter(|p| !p.is_empty() && p != "none")
+                .collect()
+        })
+        .unwrap_or_else(Vec::new);
+
+    send_email_with_attachments(
+        smtp_email.to_string(),
+        smtp_password.to_string(),
+        to.to_string(),
+        subject.to_string(),
+        body.to_string(),
+        attachment_paths,
+    )?;
 
     Ok(ExecutionAction::Continue(None))
 },
+
+            "HTTPGet" => {
+    use crate::commands::https_get_control::http_get_and_save;
+
+    let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
+    let response_save_path = args.get("response_save_path").and_then(|v| v.as_str()).unwrap_or("");
+    let open_after = args.get("open_after").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    match http_get_and_save(url, response_save_path, open_after) {
+        Ok(saved_path) => {
+            println!("HTTP GET successful, saved to: {}", saved_path);
+            let output = serde_json::json!({ "saved_path": saved_path });
+            Ok(ExecutionAction::Continue(Some(output)))
+        },
+        Err(e) => Err(format!("HTTP GET failed: {}", e))
+    }
+},
+            "HTTPPost" => {
+    use crate::commands::http_post_control::http_post_request;
+
+    let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
+    if url.is_empty() {
+        return Err("HTTP POST failed: URL is empty".to_string());
+    }
+
+  
+    let file_path = args
+        .get("file_path")
+        .and_then(|v| v.as_str())
+        .filter(|p| !p.is_empty() && *p != "none");
+
+    match http_post_request(url, file_path) {
+        Ok(()) => {
+            println!("HTTP POST successful to: {}", url);
+            Ok(ExecutionAction::Continue(None))
+        },
+        Err(e) => Err(format!("HTTP POST failed: {}", e))
+    }
+},
+
+
+
             _ => {
                 println!("Unknown command: {}", label);
                 Ok(ExecutionAction::Continue(None))
             }
         }
-    } else {
-        Ok(ExecutionAction::Continue(None))
+    }
+    else {
+        Err("Node missing data field".to_string())
     }
 }
