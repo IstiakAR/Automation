@@ -1,9 +1,7 @@
-mod utils;
 mod commands;
 mod services;
 
 use tauri::Manager;
-// use utils::{call_service, helpers};
 use commands::{
     get_mouse_position,
     FlowController,

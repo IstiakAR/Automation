@@ -15,6 +15,16 @@ pub fn init_db(app_dir: PathBuf) -> anyhow::Result<Db> {
         r#"
         PRAGMA foreign_keys = ON;
 
+        CREATE TABLE IF NOT EXISTS accounts (
+            id TEXT PRIMARY KEY,
+            provider TEXT NOT NULL,
+            provider_user_id TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+
+            UNIQUE (provider, provider_user_id)
+        );
+
         CREATE TABLE IF NOT EXISTS workspaces (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
