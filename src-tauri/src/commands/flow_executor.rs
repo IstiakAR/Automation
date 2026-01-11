@@ -3,7 +3,7 @@ use super::flow_control::{
 };
 use crate::commands::{
     browser_control, display_control, file_control, keyboard_control, mouse_control,
-    process_control, website_control,
+    process_control, website_control,email_control
 };
 use crate::services::db::Db;
 use serde_json::Value;
@@ -255,14 +255,131 @@ pub fn execute_node(
                 }
 
                 Ok(ExecutionAction::Continue(current_output))
-            }
+            },
+                        "CreateFolder" => {
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::create_dir_all(path)
+                    .map_err(|e| format!("Failed to create folder: {}", e))?;
+                println!("Created folder: {}", path);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "CopyFile" => {
+                let from = args.get("from").and_then(|v| v.as_str()).unwrap_or("");
+                let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::copy(from, to)
+                    .map_err(|e| format!("Failed to copy file: {}", e))?;
+                println!("Copied file from {} to {}", from, to);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "MoveFile" | "RenameFile" => {
+                let from = args.get("from").and_then(|v| v.as_str()).unwrap_or("");
+                let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                std::fs::rename(from, to)
+                    .map_err(|e| format!("Failed to move/rename file: {}", e))?;
+                println!("Moved/Renamed file from {} to {}", from, to);
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "CleanFolder" => {
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("");
+                for entry in std::fs::read_dir(path)
+                    .map_err(|e| format!("Failed to read directory: {}", e))? {
+                    let entry = entry.map_err(|e| e.to_string())?;
+                    let p = entry.path();
+                    if p.is_file() {
+                        std::fs::remove_file(&p)
+                            .map_err(|e| format!("Failed to delete {:?}: {}", p, e))?;
+                    }
+                }
+                println!("Cleaned folder: {}", path);
+                Ok(ExecutionAction::Continue(None))
+            },
+            "ExtractArchive" => {
+                file_control::extract_zip(&args)
+                    .map_err(|e| e.to_string())?;
+
+                Ok(ExecutionAction::Continue(None))
+            },
+
+           "SendEmail" => {
+                let smtp_email = args.get("smtp_email").and_then(|v| v.as_str()).unwrap_or("");
+                let smtp_password = args.get("smtp_password").and_then(|v| v.as_str()).unwrap_or("");
+                let to = args.get("to").and_then(|v| v.as_str()).unwrap_or("");
+                let subject = args.get("subject").and_then(|v| v.as_str()).unwrap_or("");
+                let body = args.get("body").and_then(|v| v.as_str()).unwrap_or("");
+
+                let attachment_paths: Vec<String> = args
+                    .get("attachments_file_path")
+                    .and_then(|v| v.as_str())
+                    .map(|s| {
+                        let cleaned = s
+                            .trim()
+                            .trim_start_matches('[')
+                            .trim_end_matches(']');
+
+                        cleaned
+                            .split(';')
+                            .map(|p| p.trim().to_string())
+                            .filter(|p| !p.is_empty() && p != "none")
+                            .collect()
+                    })
+                    .unwrap_or_else(Vec::new);
+
+                email_control::send_email_with_attachments(
+                    smtp_email.to_string(),
+                    smtp_password.to_string(),
+                    to.to_string(),
+                    subject.to_string(),
+                    body.to_string(),
+                    attachment_paths,
+                )?;
+
+                Ok(ExecutionAction::Continue(None))
+            },
+
+            "HTTPGet" => {
+                let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
+                let response_save_path = args.get("response_save_path").and_then(|v| v.as_str()).unwrap_or("");
+                let open_after = args.get("open_after").and_then(|v| v.as_bool()).unwrap_or(false);
+
+                match website_control::http_get_and_save(url, response_save_path, open_after) {
+                    Ok(saved_path) => {
+                        println!("HTTP GET successful, saved to: {}", saved_path);
+                        let output = serde_json::json!({ "saved_path": saved_path });
+                        Ok(ExecutionAction::Continue(Some(output)))
+                    },
+                    Err(e) => Err(format!("HTTP GET failed: {}", e))
+                }
+            },
+            "HTTPPost" => {
+                let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
+                if url.is_empty() {
+                    return Err("HTTP POST failed: URL is empty".to_string());
+                }
+
+                let file_path = args
+                    .get("file_path")
+                    .and_then(|v| v.as_str())
+                    .filter(|p| !p.is_empty() && *p != "none");
+
+                match website_control::http_post_request(url, file_path) {
+                    Ok(()) => {
+                        println!("HTTP POST successful to: {}", url);
+                        Ok(ExecutionAction::Continue(None))
+                    },
+                    Err(e) => Err(format!("HTTP POST failed: {}", e))
+                }
+            },
 
             _ => {
                 println!("Unknown command: {}", label);
                 Ok(ExecutionAction::Continue(None))
             }
         }
-    } else {
-        Ok(ExecutionAction::Continue(None))
+    }
+    else {
+        Err("Node missing data field".to_string())
     }
 }

@@ -7,9 +7,11 @@ pub mod file_control;
 pub mod keyboard_control;
 pub mod display_control;
 pub mod flow_executor;
+pub mod email_control;
 pub use mouse_control::get_mouse_position;
 pub use flow_control::{FlowController, start_flow, get_flow_state};
 use crate::services::db::{Db, Workspace, Flow, SavedFlowGraph};
+
 
 #[tauri::command]
 pub fn list_workspaces(db: tauri::State<Db>) -> Result<Vec<Workspace>, String> {
